@@ -18,9 +18,9 @@ public:
     //根据路径读取.class文件
     static ClassRead* readByPath(string path);
 
-    unsigned char readByOneByte();//往前读取一个字节
-    unsigned short  readByTwoByte();//往前读取两个字节
-    unsigned int readByFourByte();//往前读取四个字节
+    unsigned char readByOneByte();//往后读取一个字节
+    unsigned short  readByTwoByte();//往后读取两个字节
+    unsigned int readByFourByte();//往后读取四个字节
 
 };
 
