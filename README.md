@@ -90,7 +90,7 @@ vim /Users/e/Documents/github/JDK/out/production/JDK/HelloJVM.class
 <br/>
 我将逐步讲解.class中的每一个字节的含义，小伙伴亦可参考：《Java虚拟机规范》
 <br/><br/>
-不妨先来认识前4个字节，“cafe babe”，这4个字节将先被Java虚拟机读取，它的含义在于指明这是一个.class文件，你可以继续读取了，否则没有读下去的必要，因为Java虚拟机只能解析.class文件。
+不妨先来认识前4个字节，“cafe babe”，这4个字节将先被Java虚拟机读取，它的含义在于指明这是一个.class文件，你可以继续读取了，否则没有读下去的必要，因为Java虚拟机只能解析.class文件。另外它被取了一个听起来更牛*一点的名字叫做“魔数”，英文名“magic"。
 <br/><br/>
 
 ---
@@ -128,20 +128,75 @@ int main() {
 ```
 输出：CAFEBABE 
 
-到这你已经成功的完成了字节码文件解析的第一步：验证这个文件是否是一个字节码文件！你真厉害，奖励自己一局”亚索“吧！
+小总结：到这你已经成功的完成了字节码文件解析的第一步：验证这个文件是否是一个字节码文件！你真厉害，奖励自己一局”亚索“吧！
 
 ---
 
 ###### 解析内存中的字节码文件
 
+* 解析“魔数”
 
-   
-   
+   **本次commit :** 27891213b2e41614e8e19cb51c12fd9a69085ced
 
+在前文我们已经成功的将.class文件读取到了内存，创建了按1、2、4个字节往后读取的方法，并且读取了前4个字节为CAFEBABE。
+<br/><br/>
+在解析剩下的字节之前，我们来思考一个问题，在解析这些字节的时候我们应该将他们存储在哪，才能在需要的时候快速定位到？
+通常的做法，也是Hotspot的做法，用C++新建一个Klass类，来对应一个.class文件，我们直接上代码。
+```c++
+class InstanceKlass {
+    int magic; //魔数，CAFEBABE:用来校验是否是.class文件
+    
+};
+```
+我们只解析了前四个字节，所以InstanceKlass目前只定义了一个属性，随着解析的继续，InstanceKlass中将包含所有.class文件的内容。
+我们来简短的讨论一下包结构，前面我们定义了ClassRead来读取磁盘上的.class文件到内存中，很自然的我们还需要有一个专门解析内存中的字节的c++类，于是我们新建类ClassFileParser
+```c++
+class ClassFileParser {
+public:
+    static InstanceKlass* Parser(ClassRead *classRead);
+    static void checkAndPutMagic(ClassRead *classRead, InstanceKlass *klass);
+};
+```
+它目前只有两个方法：<br/>
+1.Parser，就是用来解析被读到内存中的.class文件，也就是在上一章节生成的ClassRead对象。然后返回一个InstanceKlass对象，是不是很像一个InstanceKlass工厂。
+我们来把前四个字节写入InstanceKlass。<br/>
+2.checkAndPutMagic，供Parser调用。<br/>
+```c++
+InstanceKlass *ClassFileParser::Parser(ClassRead *classRead) {
+    InstanceKlass *klass = new InstanceKlass;
+    checkAndPutMagic(classRead, klass);//校验是否是class文件
+    return klass;
+}
 
+void ClassFileParser::checkAndPutMagic(ClassRead *classRead, InstanceKlass *klass) {
+    klass->setMagic(classRead->readByFourByte());
+    if (klass->getMagic() == MAGIC) {
+        printf("class文件校验正确\n");
+        return;
+    }
+    printf("class文件校验错误，%X\n", klass->getMagic());
+}
+```
+在Parser中我们new了一个InstanceKlass对象，然后调用checkAndPutMagic将前四个字节赋值给InstanceKlass的magic属性。
+<br/><br/>
+我们来做一个单元测试<br/><br/>
+```c++
+int main() {
+    ClassRead *classRead = ClassRead::readByPath("/Users/eba/Documents/github/JDK/out/production/JDK/HelloJVM.class");//换成你自己的path
+    InstanceKlass *klass = ClassFileParser::Parser(classRead);
+    printf("%X\n", klass->getMagic());
+    return 0;
+}
+```
+输出：
+class文件校验正确
+CAFEBABE
 
+小总结：本节我们新建了InstanceKlass用来存储.class文件中的字节信息，并正确的将CAFEBABE属性正确地写入了InstanceKlass对象中，顺便确定了解析流程的代码结构，每次新解析一块内容，只需要新建解析方法，然后Parser方法中调用即可，示例：checkAndPutMagic 方法。
 
+---
 
+* 解析“版本号”
 
 
 
