@@ -3,4 +3,4 @@ project(JVM)
 
 set(CMAKE_CXX_STANDARD 11)
 
-add_executable(JVM main.cpp)
+add_executable(JVM main.cpp Stream/ClassRead.cpp Stream/ClassRead.h)
