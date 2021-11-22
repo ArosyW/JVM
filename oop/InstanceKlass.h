@@ -9,11 +9,20 @@
 
 class InstanceKlass {
     int magic; //魔数，CAFEBABE:用来校验是否是.class文件
+    short minorVersion; //JDK次版本号
+    short majorVersion; //JDK主版本号
 public:
-    /**
-     * 以下为get && set ,以及构造方法
-     * @return
-     */
+/**
+ * 以下为getter && setter && 构造方法
+ */
+    short getMinorVersion() const;
+
+    void setMinorVersion(short minorVersion);
+
+    short getMajorVersion() const;
+
+    void setMajorVersion(short majorVersion);
+
     int getMagic() const;
 
     void setMagic(int magic);
