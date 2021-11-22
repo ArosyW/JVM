@@ -15,6 +15,8 @@ public:
     static void checkAndPutVersion(ClassRead *classRead, InstanceKlass *klass);//验证JDK版本号
     static void parserConstantPoolCount(ClassRead *classRead, InstanceKlass *klass);//解析常量池数量
     static void parserConstantPool(ClassRead *classRead, InstanceKlass *klass);//解析常量池数量
+    static void parserAccessFlags(ClassRead *classRead, InstanceKlass *klass);//解析访问权限
+
 
 };
 

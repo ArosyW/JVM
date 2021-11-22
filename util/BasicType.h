@@ -5,6 +5,7 @@
 #ifndef JVM_BASICTYPE_H
 #define JVM_BASICTYPE_H
 
+#define MAGIC              0xCAFEBABE
 //常量池枚举
 #define CONSTANT_Class                   7
 #define CONSTANT_Fieldref                9

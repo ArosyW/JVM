@@ -7,15 +7,22 @@
 
 #include "ConstantPool.h"
 
-#define MAGIC              0xCAFEBABE
-
 class InstanceKlass {
     int magic; //魔数，CAFEBABE:用来校验是否是.class文件
     short minorVersion; //JDK次版本号
     short majorVersion; //JDK主版本号
     short constantPoolCount;//常量数量
     ConstantPool *constantPool;//常量池数据
+    short accessFlags;//类的访问权限
+
+/**
+ * 以下为getter && setter && 构造方法
+ */
 public:
+    short getAccessFlags() const;
+
+    void setAccessFlags(short accessFlags);
+
     short getConstantPoolCount() const;
 
     void setConstantPoolCount(short constantPoolCount);
@@ -24,10 +31,6 @@ public:
 
     void setConstantPool(ConstantPool *constantPool);
 
-public:
-/**
- * 以下为getter && setter && 构造方法
- */
     short getMinorVersion() const;
 
     void setMinorVersion(short minorVersion);

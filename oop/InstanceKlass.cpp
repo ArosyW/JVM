@@ -43,3 +43,11 @@ ConstantPool *InstanceKlass::getConstantPool() const {
 void InstanceKlass::setConstantPool(ConstantPool *constantPool) {
     InstanceKlass::constantPool = constantPool;
 }
+
+short InstanceKlass::getAccessFlags() const {
+    return accessFlags;
+}
+
+void InstanceKlass::setAccessFlags(short accessFlags) {
+    InstanceKlass::accessFlags = accessFlags;
+}
