@@ -49,5 +49,14 @@ unsigned int  ClassRead::readByFourByte(){
     cur = cur + 4;
     return htonl(*res);
 }
+/**
+ * 往后读取len个字节，并把值赋给target
+ */
+void  ClassRead::readByFreeByte(short len,char* target){
+    for (int i = 0; i < len; i++) {
+        target[i] = readByOneByte();
+    }
+    target[len] = '\0';
+}
 
 ClassRead::ClassRead(char *data) : data(data) {}//构造方法

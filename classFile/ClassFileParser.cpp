@@ -2,12 +2,100 @@
 // Created by Arosy on 2021/11/21.
 //
 #include "ClassFileParser.h"
+#include "../util/BasicType.h"
+
 InstanceKlass *ClassFileParser::Parser(ClassRead *classRead) {
     InstanceKlass *klass = new InstanceKlass;
     checkAndPutMagic(classRead, klass);//校验是否是class文件
     checkAndPutVersion(classRead, klass);//校验版本号
+    parserConstantPoolCount(classRead, klass);
+    parserConstantPool(classRead, klass);
     return klass;
 }
+
+void ClassFileParser::parserConstantPoolCount(ClassRead *classRead, InstanceKlass *klass) {
+    klass->setConstantPoolCount(classRead->readByTwoByte());
+};
+void ClassFileParser::parserConstantPool(ClassRead *classRead, InstanceKlass *klass) {
+    klass->setConstantPool(new ConstantPool);
+    ConstantPool *constantPool = klass->getConstantPool();
+    constantPool->tag = new char[klass->getConstantPoolCount()];
+
+    for (int i = 1; i <= klass->getConstantPoolCount(); i++) {
+        unsigned char tag = classRead->readByOneByte();
+        *(constantPool->tag + i) = tag;
+        switch (tag) {
+            case CONSTANT_Utf8: {
+                unsigned short len = classRead->readByTwoByte();
+                char *target = new char[len + 1];
+                classRead->readByFreeByte(len, target);
+                (constantPool->data[i]) = target;
+                printf("第%d个，类型utf-8，值%s\n", i, constantPool->data[i]);
+                break;
+            }
+            case CONSTANT_Integer: {
+                char *temp = new char;
+                *temp = classRead->readByFourByte();
+                constantPool->data[i] = temp;
+                printf("第%d个，类型Integer，值%d\n", i, *constantPool->data[i]);
+                break;
+            }
+            case CONSTANT_Float: {
+                char *temp = new char;
+                *temp = classRead->readByFourByte();
+                constantPool->data[i] = temp;
+                printf("第%d个，类型Float，值%d\n", i, *constantPool->data[i]);
+                break;
+            }
+            case CONSTANT_Long: {
+                printf("暂不处理\n");
+                break;
+            }
+            case CONSTANT_Double: {
+                printf("暂不处理\n");
+                break;
+            }
+            case CONSTANT_Class: {
+                char *temp = new char;
+                *temp = classRead->readByTwoByte();
+                constantPool->data[i] = temp;
+                printf("第%d个，类型Class，值%d\n", i, *constantPool->data[i]);
+                break;
+            }
+            case CONSTANT_String: {
+                char *temp = new char[3];
+                *temp = classRead->readByTwoByte();
+                temp[2] = '\0';
+                constantPool->data[i] = temp;
+                printf("第%d个，类型String，值%d\n", i, *constantPool->data[i]);
+                break;
+            }
+            case CONSTANT_Fieldref:
+            case CONSTANT_Methodref:
+            case CONSTANT_InterfaceMethodref: {
+                int *temp = new int;
+                short classIndex = classRead->readByTwoByte();
+                short nameAndTypeIndex = classRead->readByTwoByte();
+                *temp = htonl(classIndex << 16 | nameAndTypeIndex);
+                (constantPool->data[i]) = (char *) temp;
+                printf("第%d个，类型file、method、Interface Methodref，值%X\n", i, htonl(*(int *) constantPool->data[i]));
+                break;
+            }
+            case CONSTANT_NameAndType: {
+                int *temp = new int;
+                short nameIndex = classRead->readByTwoByte();
+                short descriptorIndex = classRead->readByTwoByte();
+                *temp = htonl(nameIndex << 16 | descriptorIndex);
+                (constantPool->data[i]) = (char *) temp;
+                printf("第%d个，类型NameAndType，值%X\n", i, htonl(*(int *) constantPool->data[i]));
+                break;
+            }
+            default:
+                break;
+        }
+
+    }
+};
 
 void ClassFileParser::checkAndPutVersion(ClassRead *classRead, InstanceKlass *klass) {
     klass->setMinorVersion(classRead->readByTwoByte());

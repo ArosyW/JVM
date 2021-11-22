@@ -27,3 +27,19 @@ short InstanceKlass::getMajorVersion() const {
 void InstanceKlass::setMajorVersion(short majorVersion) {
     InstanceKlass::majorVersion = majorVersion;
 }
+
+short InstanceKlass::getConstantPoolCount() const {
+    return constantPoolCount;
+}
+
+void InstanceKlass::setConstantPoolCount(short constantPoolCount) {
+    InstanceKlass::constantPoolCount = constantPoolCount;
+}
+
+ConstantPool *InstanceKlass::getConstantPool() const {
+    return constantPool;
+}
+
+void InstanceKlass::setConstantPool(ConstantPool *constantPool) {
+    InstanceKlass::constantPool = constantPool;
+}

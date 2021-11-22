@@ -21,6 +21,8 @@ public:
     unsigned char readByOneByte();//往后读取一个字节
     unsigned short  readByTwoByte();//往后读取两个字节
     unsigned int readByFourByte();//往后读取四个字节
+    void readByFreeByte(short len,char* target);
+
 
 };
 

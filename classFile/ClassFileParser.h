@@ -13,6 +13,8 @@ public:
     static InstanceKlass* Parser(ClassRead *classRead); // 总解析流程，里面调用小的解析流程，例如调用checkAndPutMagic
     static void checkAndPutMagic(ClassRead *classRead, InstanceKlass *klass);//验证是否是.class文件
     static void checkAndPutVersion(ClassRead *classRead, InstanceKlass *klass);//验证JDK版本号
+    static void parserConstantPoolCount(ClassRead *classRead, InstanceKlass *klass);//解析常量池数量
+    static void parserConstantPool(ClassRead *classRead, InstanceKlass *klass);//解析常量池数量
 
 };
 
