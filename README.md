@@ -517,6 +517,64 @@ class文件校验正确
 
 * 解析“访问权限”
 
-  **本次commit :** 
+  **本次commit :** 31c44a0db30ad79e7c358bc076df6ad69d0f836c
 
+本章节较为简单，只有两个字节，用来表示Java类的访问权限，下面给出一张权限枚举表：
+
+|  类型   | 映射值  |
+|  ----  | ----  |
+|   PUBLIC               |    0x0001 |
+|   FINAL            |    0x0010 |
+|  SUPER            |   0x0020 |
+|  INTERFACE   |   0x0200 |
+|   ABSTRACT              |    0x0300 |
+|   SYNTHETIC             |    0x1000 |
+|   ANNOTATION             |    0x2000 |
+|   ENUM             |    0x4000 |
+
+于是我们在InstanceKlass中新增accessFlags属性：
+```c++
+class InstanceKlass {
+    int magic; //魔数，CAFEBABE:用来校验是否是.class文件
+    short minorVersion; //JDK次版本号
+    short majorVersion; //JDK主版本号
+    short constantPoolCount;//常量数量
+    ConstantPool *constantPool;//常量池数据
+    short accessFlags;//类的访问权限 （新增）
+};
+```
+在ClassFileParser中新建parserAccessFlags方法用来解析类的访问权限：
+
+```c++
+void ClassFileParser::parserAccessFlags(ClassRead *classRead, InstanceKlass *klass) {
+    unsigned short acc = classRead->readByTwoByte();
+    klass->setAccessFlags(acc);
+    printf("访问权限：%d\n", acc);
+};
+
+```
+记得在Parser方法中调用parserAccessFlags。
+
+我们来做一个测试：
+
+```c++
+int main() {
+    ClassRead *classRead = ClassRead::readByPath("/Users/e/Documents/github/JDK/out/production/JDK/HelloJVM.class");//换成你自己的path
+    InstanceKlass *klass = ClassFileParser::Parser(classRead);
+    return 0;
+}
+
+```
+
+输出：<br/><br/>
+访问权限：33 （PUBLIC SUPER）
+
+小总结：本章节太简单不想总结了，就是顽皮。另外，本次提交修复了上一章节在解析常量池时留下的bug,多循环了一次。
+
+---
+
+
+* 解析“类名 && 父类名”
+
+  **本次commit :** 
 
