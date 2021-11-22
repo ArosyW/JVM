@@ -119,7 +119,7 @@ public:
 ```
 重申：方法的具体实现请移步代码commit:f4f61fcfe7f461d69a58d01b2e71bb6efe4e5387
 <br/><br/>
-单元测试一下
+我们来做一个测试
 ```c++
 int main() {
     ClassRead *classRead = ClassRead::readByPath("/Users/e/Documents/github/JDK/out/production/JDK/HelloJVM.class");//换成你自己的path
@@ -181,7 +181,7 @@ void ClassFileParser::checkAndPutMagic(ClassRead *classRead, InstanceKlass *klas
 ```
 在Parser中我们new了一个InstanceKlass对象，然后调用checkAndPutMagic将前四个字节赋值给InstanceKlass的magic属性。
 <br/><br/>
-我们来做一个单元测试<br/><br/>
+我们来做一个测试<br/><br/>
 ```c++
 int main() {
     ClassRead *classRead = ClassRead::readByPath("/Users/eba/Documents/github/JDK/out/production/JDK/HelloJVM.class");//换成你自己的path
@@ -256,7 +256,7 @@ void ClassFileParser::checkAndPutVersion(ClassRead *classRead, InstanceKlass *kl
     printf("版本校验错误\n");
 };
 ```
-来测试一下：
+我们来做一个测试：
 
 ```c++
 int main() {
@@ -276,16 +276,247 @@ class文件校验正确<br/>
 
 ---
 
-* 解析“常量池”
+* 解析“Class常量池”
+
+  **本次commit :** 2b5f5163d0072d7756abfbac80430d50d67bb194
+
+“常量池”顾名思义，一堆常量的集合，诸如"main"、"HelloJVM.java"等单词都存储在这里面，或许在这之前你有听说过"方法区"以及它的实现"元空间"、"永久代"，没错，从狭义上，InstanceKlass里面存的所有的内容在"方法区"，而"方法区"就是一块内存空间，我们在GC章节会讲解。
+若是你亦听说过"方法区"里存储着"元数据"，那么这一章节你将更加清晰的认识到"元数据"是什么，当然，元数据包含整个InstanceKlass里面的内容，而不局限于本章节的Class常量池。
+<br/><br/>
+PS：后面我们还会讲到"运行时常量池" 和 "字符串常量池"
+<br/><br/>
+动手！
+<br/><br/>
+我们会遇到一个问题，Java类是自已定义的，里面究竟有多少个方法，多少个属性是不一定的，意味着"常量池"的大小是不一定的，那么我们如何确定我们应该读取多少个字节停下呢。
+显然我们需要预知长度，这里用了两个字节表示长度。"CAFEBABE 0000 0034 0022 ……" 其中0x0022是十进制的34，这里要特别注意，按照约定，真正有效的常量池数量是所给出的长度n-1，意味着我们只有33个常量池字段需要读取，那么用一个for循环33次是比较合理的。
+每一次循环即每一次读取常量池字段的时候，我们还需要知道我们读到的数据是什么类型才能知道接下来读取几个字节能完全取到我们想要的数据，这里给出14中类型如下：
+
+|  类型   | 映射值  |
+|  ----  | ----  |
+|   CONSTANT_Class               |    7 |
+|   CONSTANT_Fieldref            |    9 |
+|  CONSTANT_Methodref            |   10 |
+|  CONSTANT_InterfaceMethodref   |   11 |
+|   CONSTANT_String              |    8 |
+|   CONSTANT_Integer             |    3 |
+|   CONSTANT_Float               |    4 |
+|   CONSTANT_Long                |    5 |
+|   CONSTANT_Double              |    6 |
+|  CONSTANT_NameAndType          |   12 |
+|   CONSTANT_Utf8                |    1 |
+|  CONSTANT_MethodHandle         |   15 |
+|  CONSTANT_MethodType           |   16 |
+|  CONSTANT_InvokeDynamic        |   18 |
+
+<br/><br/>
+那么解析常量池的流程基本明了了，先读取两个字节获取到常量池的长度count，然后循环count次，每次先读取一个字节用来匹配类型，这里显然用一个switch case比较合理，匹配到了类型，做不同的处理，然后存在InstanceKlass中。
+
+我们先来在创建常量池类ConstantPool:
+
+```c++
+class ConstantPool {
+public:
+    char *tag;
+    std::map<int, char*> data;
+};
+
+```
+用tag来表示数据类型，用map来存储数据，key为索引，也就是它是第几个常量（后面的章节执行指令时需要用到索引），value即为真正的常量池数据。
+<br/><br/>
+接下来在InstanceKlass中增加常量池数量和常量池两个字段：
+```c++
+class InstanceKlass {
+    int magic; 
+    short minorVersion; 
+    short majorVersion;
+    short constantPoolCount;//常量数量（新增）
+    ConstantPool *constantPool;//常量池数据（新增）
+};
+
+```
+ClassFileParser中新增两个方法分别解析"常量池数量"和"常量池"：
+
+```c++
+InstanceKlass *ClassFileParser::Parser(ClassRead *classRead) {
+    InstanceKlass *klass = new InstanceKlass;
+    checkAndPutMagic(classRead, klass);//校验是否是class文件
+    checkAndPutVersion(classRead, klass);//校验版本号
+    parserConstantPoolCount(classRead, klass);//解析出常量池数量
+    parserConstantPool(classRead, klass);//解析常量池
+    return klass;
+}
+
+void ClassFileParser::parserConstantPoolCount(ClassRead *classRead, InstanceKlass *klass) {
+    klass->setConstantPoolCount(classRead->readByTwoByte());
+};
+void ClassFileParser::parserConstantPool(ClassRead *classRead, InstanceKlass *klass) {
+    klass->setConstantPool(new ConstantPool);
+    ConstantPool *constantPool = klass->getConstantPool();
+    constantPool->tag = new char[klass->getConstantPoolCount()];
+    for (int i = 1; i < klass->getConstantPoolCount(); i++) {
+        unsigned char tag = classRead->readByOneByte();
+        *(constantPool->tag + i) = tag;
+        switch (tag) {
+        }
+    }
+};
+
+```
+   * 处理方式：
+     * utf-8:长度是可变的，规定用2个字节指明了长度，于是先读取两个字节获取长度length，随后读取length个字节的内容，将其存储在ConstantPool中的data中。
+     * Integer、Float:读取4个字节将其存储在ConstantPool中的data中。
+     * Long、Double:占用两个ConstantPool->data索引，暂不处理。
+     * Class、String:读取2个字节将其存储在ConstantPool中的data中。
+     * Fieldref、Methodref、InterfaceMethodref、NameAndType: 申请4个字节的内存i，先读取2个字节存储在i的左16位，再读取两个字节存储在i的右16位。
+<br/><br/>
+     
+于是我们的parserConstantPool方法变成了这样：
+
+```c++
+void ClassFileParser::parserConstantPool(ClassRead *classRead, InstanceKlass *klass) {
+    klass->setConstantPool(new ConstantPool);
+    ConstantPool *constantPool = klass->getConstantPool();
+    constantPool->length = klass->getConstantPoolCount();
+    constantPool->tag = new char[klass->getConstantPoolCount()];
+
+    for (int i = 1; i < klass->getConstantPoolCount(); i++) {
+        unsigned char tag = classRead->readByOneByte();
+        *(constantPool->tag + i) = tag;
+        switch (tag) {
+            case CONSTANT_Utf8: {
+                unsigned short len = classRead->readByTwoByte();
+                char *target = new char[len + 1];
+                classRead->readByFreeByte(len, target);
+                (constantPool->info[i]) = target;
+                printf("第%d个，类型utf-8，值%s\n", i, constantPool->info[i]);
+                break;
+            }
+            case CONSTANT_Integer: {
+                char *temp = new char;
+                *temp = classRead->readByFourByte();
+                constantPool->info[i] = temp;
+                printf("第%d个，类型Integer，值%d\n", i, *constantPool->info[i]);
+                break;
+            }
+            case CONSTANT_Float: {
+                char *temp = new char;
+                *temp = classRead->readByFourByte();
+                constantPool->info[i] = temp;
+                printf("第%d个，类型Float，值%d\n", i, *constantPool->info[i]);
+                break;
+            }
+            case CONSTANT_Long: {
+                printf("暂不处理\n");
+                break;
+            }
+            case CONSTANT_Double: {
+                printf("暂不处理\n");
+                break;
+            }
+            case CONSTANT_Class: {
+                char *temp = new char;
+                *temp = classRead->readByTwoByte();
+                constantPool->info[i] = temp;
+                printf("第%d个，类型Class，值%d\n", i, *constantPool->info[i]);
+                break;
+            }
+            case CONSTANT_String: {
+                char *temp = new char[3];
+                *temp = classRead->readByTwoByte();
+                temp[2] = '\0';
+                constantPool->info[i] = temp;
+                printf("第%d个，类型String，值%d\n", i, *constantPool->info[i]);
+                break;
+            }
+            case CONSTANT_Fieldref:
+            case CONSTANT_Methodref:
+            case CONSTANT_InterfaceMethodref: {
+                int *temp = new int;
+                short classIndex = classRead->readByTwoByte();
+                short nameAndTypeIndex = classRead->readByTwoByte();
+                *temp = htonl(classIndex << 16 | nameAndTypeIndex);
+                (constantPool->info[i]) = (char *) temp;
+                printf("第%d个，类型file、method、Interface Methodref，值%X\n", i, htonl(*(int *) constantPool->info[i]));
+                break;
+            }
+            case CONSTANT_NameAndType: {
+                int *temp = new int;
+                short nameIndex = classRead->readByTwoByte();
+                short descriptorIndex = classRead->readByTwoByte();
+                *temp = htonl(nameIndex << 16 | descriptorIndex);
+                (constantPool->info[i]) = (char *) temp;
+                printf("第%d个，类型NameAndType，值%X\n", i, htonl(*(int *) constantPool->info[i]));
+                break;
+            }
+            default:
+                break;
+        }
+
+    }
+};
+
+```
+我们来做一个测试：
+
+```c++
+int main() {
+    ClassRead *classRead = ClassRead::readByPath("/Users/e/Documents/github/JDK/out/production/JDK/HelloJVM.class");//换成你自己的path
+    InstanceKlass *klass = ClassFileParser::Parser(classRead);
+    return 0;
+}
+
+```
+
+输出：<br/><br/>
+
+```
+class文件校验正确 	
+次版本号：0 	
+主版本号：52 	
+版本校验正确 	
+第1个，类型file、method、Interface Methodref，值60014 	
+第2个，类型file、method、Interface Methodref，值150016 	
+第3个，类型String，值23 	
+第4个，类型file、method、Interface Methodref，值180019 	
+第5个，类型Class，值26 	
+第6个，类型Class，值27 	
+第7个，类型utf-8，值<init> 	
+第8个，类型utf-8，值()V 	
+第9个，类型utf-8，值Code 	
+第10个，类型utf-8，值LineNumberTable 	
+第11个，类型utf-8，值LocalVariableTable 	
+第12个，类型utf-8，值this 	
+第13个，类型utf-8，值LHelloJVM; 	
+第14个，类型utf-8，值main 	
+第15个，类型utf-8，值([Ljava/lang/String;)V 	
+第16个，类型utf-8，值args 	
+第17个，类型utf-8，值[Ljava/lang/String; 	
+第18个，类型utf-8，值SourceFile 	
+第19个，类型utf-8，值HelloJVM.java 	
+第20个，类型NameAndType，值70008 	
+第21个，类型Class，值28 	
+第22个，类型NameAndType，值1D001E 	
+第23个，类型utf-8，值Hello JVM 	
+第24个，类型Class，值31 	
+第25个，类型NameAndType，值200021 	
+第26个，类型utf-8，值HelloJVM 	
+第27个，类型utf-8，值java/lang/Object 	
+第28个，类型utf-8，值java/lang/System 	
+第29个，类型utf-8，值out 	
+第30个，类型utf-8，值Ljava/io/PrintStream; 	
+第31个，类型utf-8，值java/io/PrintStream 	
+第32个，类型utf-8，值println 	
+第33个，类型utf-8，值(Ljava/lang/String;)V 	
+
+```
+
+小总结：本章节相信聪明的你已经深切地感受到了我们这一模块的工作要领：按照约定把Java类拆解用C++存起来。假如你对于代码理解很困难，没关系，看一下小测试的输出，只需要知道我们是在存储类信息就好。
+
+---
 
 
+* 解析“访问权限”
 
-
-
-
-
-
-
-
+  **本次commit :** 
 
 
