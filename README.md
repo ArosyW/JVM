@@ -574,7 +574,82 @@ int main() {
 ---
 
 
-* 解析“类名 && 父类名”
+* 解析“类名 && 父类名”（全限定名）
 
   **本次commit :** 
+
+先来看一张图，我们已经解析到这里了：
+
+<img src="https://github.com/ArosyW/picture/blob/master/serp.jpeg" width = "400" height = "500" />
+
+<br/><br/>
+“类名 && 父类名”也很简单，各自占用两个字节。需要注意的是，这两个字节表示的并不是真正的String类型的类名，而是一个Class常量池（前面章节解析的ConstantPool）索引，例如在此处，往下读两个字节是"00 05"，表示类名的常量池索引为5，
+而常量池索引为5的值如下，是26，常量池索引为26的值即为我们的类名"HelloJVM"。另外这个名字是带有路径的，也就是全限定名，在项目中是唯一的，比如其父类名为"java/lang/Object"。
+
+```
+
+……
+第4个，类型file、method、Interface Methodref，值180019
+第5个，类型Class，值26
+第6个，类型Class，值27
+……
+第26个，类型utf-8，值HelloJVM
+……
+```
+老套路，InstanceKlass新增属性"类名"和"父类名"：
+
+```c++
+
+class InstanceKlass {
+int magic; //魔数，CAFEBABE:用来校验是否是.class文件
+……
+short thisClass;//类名
+short superClass;//父类名
+}
+
+```
+ClassFileParser中新增parserThisClass、parserSuperClass方法分别解析类名与父类名：
+
+```c++
+
+void ClassFileParser::parserThisClass(ClassRead *classRead, InstanceKlass *klass) {
+klass->setThisClass(classRead->readByTwoByte());
+printf("类名：%X\n", klass->getThisClass());
+};
+
+void ClassFileParser::parserSuperClass(ClassRead *classRead, InstanceKlass *klass) {
+klass->setSuperClass(classRead->readByTwoByte());
+printf("父类名：%X\n", klass->getSuperClass());
+};
+
+```
+保姆级提示：要记得在总的解析流程Parser方法中调用这两个新增的方法。
+
+我们来做一个测试：
+
+```c++
+int main() {
+    ClassRead *classRead = ClassRead::readByPath("/Users/e/Documents/github/JDK/out/production/JDK/HelloJVM.class");//换成你自己的path
+    InstanceKlass *klass = ClassFileParser::Parser(classRead);
+    int indexClass = *(klass->getConstantPool()->data[klass->getThisClass()]);
+    int indexSuperClass = *(klass->getConstantPool()->data[klass->getSuperClass()]);
+    printf("类名：%s\n", klass->getConstantPool()->data[indexClass]);
+    printf("父类名：%s\n", klass->getConstantPool()->data[indexSuperClass]);
+    return 0;
+}
+
+```
+输出：<br/><br/>
+类名：HelloJVM<br/>
+父类名：java/lang/Object
+
+小总结：把四个字节set进InstanceKlass对象，总结完了。
+
+---
+
+* 解析"接口"
+
+  **本次commit :** 
+
+
 
