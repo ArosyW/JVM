@@ -97,7 +97,7 @@ vim /Users/e/Documents/github/JDK/out/production/JDK/HelloJVM.class
 ---
 
 ###### 字节码文件读取到内存
-   **本次commit :** f4f61fcfe7f461d69a58d01b2e71bb6efe4e5387 
+   **本次commit :** b898c3ba733fb44c06fec6b0928cd9a173f5cd0f 
    * 读到内存
    新建 ClassRead.h && ClassRead.cpp 
 ```c++
@@ -137,7 +137,7 @@ int main() {
 
 * 解析“魔数”
 
-   **本次commit :** 27891213b2e41614e8e19cb51c12fd9a69085ced
+   **本次commit :** b51a7f6ab598a13b1e56b6f8cf9686944c10084c
 
 在前文我们已经成功的将.class文件读取到了内存，创建了按1、2、4个字节往后读取的方法，并且读取了前4个字节为CAFEBABE。
 <br/><br/>
@@ -200,7 +200,7 @@ CAFEBABE
 
 * 解析“版本号”
 
-  **本次commit :** 20d7b7b7072bce3a83d730274a2f5078463b2a09
+  **本次commit :** 36344db2cf2e8be84980307cf45d7b1378d4a746
 
 在前文中我们已经成功地将"CAFEBABE"存入到了我们新创建的klass对象，下面我们再来读四个字节，"0000 0034"是用来校验JDK版本号的,其中"0000" 表示JDK的次版本号"minorVersion"，"0034"表示主版本号"majorVersion"，次版本号一般为0，主版本号与JDK版本的对应关系如下：
 <br/>
@@ -278,7 +278,7 @@ class文件校验正确<br/>
 
 * 解析“Class常量池”
 
-  **本次commit :** 2b5f5163d0072d7756abfbac80430d50d67bb194
+  **本次commit :** 9a212900d255cda698780d96dafff43dc1152677
 
 “常量池”顾名思义，一堆常量的集合，诸如"main"、"HelloJVM.java"等单词都存储在这里面，或许在这之前你有听说过"方法区"以及它的实现"元空间"、"永久代"，没错，从狭义上，InstanceKlass里面存的所有的内容在"方法区"，而"方法区"就是一块内存空间，我们在GC章节会讲解。
 若是你亦听说过"方法区"里存储着"元数据"，那么这一章节你将更加清晰的认识到"元数据"是什么，当然，元数据包含整个InstanceKlass里面的内容，而不局限于本章节的Class常量池。
@@ -517,7 +517,7 @@ class文件校验正确
 
 * 解析“访问权限”
 
-  **本次commit :** 31c44a0db30ad79e7c358bc076df6ad69d0f836c
+  **本次commit :** a340887eaa2ef20cb609c3dd90dce7af54c8bb67
 
 本章节较为简单，只有两个字节，用来表示Java类的访问权限，下面给出一张权限枚举表：
 
@@ -576,7 +576,7 @@ int main() {
 
 * 解析“类名 && 父类名”（全限定名）
 
-  **本次commit :** 
+  **本次commit :** 6ef6e3a6c4d41d86404fd26079b1468f88332f72
 
 先来看一张图，我们已经解析到这里了：
 
