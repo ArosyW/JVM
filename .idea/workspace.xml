@@ -19,7 +19,6 @@
       <change beforePath="$PROJECT_DIR$/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/main.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/oop/InstanceKlass.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/oop/InstanceKlass.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/oop/InstanceKlass.h" beforeDir="false" afterPath="$PROJECT_DIR$/oop/InstanceKlass.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/util/BasicType.h" beforeDir="false" afterPath="$PROJECT_DIR$/util/BasicType.h" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -88,7 +87,7 @@
       <updated>1637480371955</updated>
       <workItem from="1637480374991" duration="8011000" />
       <workItem from="1637547634911" duration="4851000" />
-      <workItem from="1637559799711" duration="13493000" />
+      <workItem from="1637559799711" duration="18293000" />
     </task>
     <task id="LOCAL-00001" summary="解析常量池">
       <created>1637571501512</created>
@@ -111,7 +110,21 @@
       <option name="project" value="LOCAL" />
       <updated>1637572437933</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="解析类访问权限">
+      <created>1637581900323</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1637581900323</updated>
+    </task>
+    <task id="LOCAL-00005" summary="UPDATE README">
+      <created>1637582072884</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1637582072884</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -130,6 +143,7 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="解析常量池" />
+    <MESSAGE value="解析类访问权限" />
     <MESSAGE value="UPDATE README" />
     <option name="LAST_COMMIT_MESSAGE" value="UPDATE README" />
   </component>

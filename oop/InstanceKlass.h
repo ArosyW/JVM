@@ -14,11 +14,21 @@ class InstanceKlass {
     short constantPoolCount;//常量数量
     ConstantPool *constantPool;//常量池数据
     short accessFlags;//类的访问权限
+    short thisClass;//类名
+    short superClass;//父类名
 
 /**
  * 以下为getter && setter && 构造方法
  */
 public:
+    short getThisClass() const;
+
+    void setThisClass(short thisClass);
+
+    short getSuperClass() const;
+
+    void setSuperClass(short superClass);
+
     short getAccessFlags() const;
 
     void setAccessFlags(short accessFlags);

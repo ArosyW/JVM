@@ -16,6 +16,8 @@ public:
     static void parserConstantPoolCount(ClassRead *classRead, InstanceKlass *klass);//解析常量池数量
     static void parserConstantPool(ClassRead *classRead, InstanceKlass *klass);//解析常量池数量
     static void parserAccessFlags(ClassRead *classRead, InstanceKlass *klass);//解析访问权限
+    static void parserThisClass(ClassRead *classRead, InstanceKlass *klass);//解析类名
+    static void parserSuperClass(ClassRead *classRead, InstanceKlass *klass);//解析父类名
 
 
 };

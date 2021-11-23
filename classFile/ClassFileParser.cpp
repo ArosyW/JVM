@@ -11,6 +11,8 @@ InstanceKlass *ClassFileParser::Parser(ClassRead *classRead) {
     parserConstantPoolCount(classRead, klass);//解析常量池数量
     parserConstantPool(classRead, klass);//解析常量池
     parserAccessFlags(classRead, klass);//解析访问权限
+    parserThisClass(classRead, klass);//类名
+    parserSuperClass(classRead, klass);//父类名
     return klass;
 }
 
@@ -134,4 +136,14 @@ void ClassFileParser::parserAccessFlags(ClassRead *classRead, InstanceKlass *kla
     unsigned short acc = classRead->readByTwoByte();
     klass->setAccessFlags(acc);
     printf("访问权限：%d\n", acc);
+};
+
+void ClassFileParser::parserThisClass(ClassRead *classRead, InstanceKlass *klass) {
+    klass->setThisClass(classRead->readByTwoByte());
+    printf("类名：%X\n", klass->getThisClass());
+};
+
+void ClassFileParser::parserSuperClass(ClassRead *classRead, InstanceKlass *klass) {
+    klass->setSuperClass(classRead->readByTwoByte());
+    printf("父类名：%X\n", klass->getSuperClass());
 };

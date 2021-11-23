@@ -51,3 +51,19 @@ short InstanceKlass::getAccessFlags() const {
 void InstanceKlass::setAccessFlags(short accessFlags) {
     InstanceKlass::accessFlags = accessFlags;
 }
+
+short InstanceKlass::getThisClass() const {
+    return thisClass;
+}
+
+void InstanceKlass::setThisClass(short thisClass) {
+    InstanceKlass::thisClass = thisClass;
+}
+
+short InstanceKlass::getSuperClass() const {
+    return superClass;
+}
+
+void InstanceKlass::setSuperClass(short superClass) {
+    InstanceKlass::superClass = superClass;
+}
