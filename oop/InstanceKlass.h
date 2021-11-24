@@ -6,6 +6,7 @@
 #define JVM_INSTANCEKLASS_H
 
 #include "ConstantPool.h"
+#include "InterfacesInfo.h"
 
 class InstanceKlass {
     int magic; //魔数，CAFEBABE:用来校验是否是.class文件
@@ -16,11 +17,21 @@ class InstanceKlass {
     short accessFlags;//类的访问权限
     short thisClass;//类名
     short superClass;//父类名
+    short interfacesCount;//接口数量
+    InterfacesInfo *interfaces;//接口
 
-/**
+ /**
  * 以下为getter && setter && 构造方法
  */
 public:
+    short getInterfacesCount() const;
+
+    void setInterfacesCount(short interfacesCount);
+
+    InterfacesInfo *getInterfaces() const;
+
+    void setInterfaces(InterfacesInfo *interfaces);
+
     short getThisClass() const;
 
     void setThisClass(short thisClass);

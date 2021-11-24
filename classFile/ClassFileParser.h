@@ -18,6 +18,8 @@ public:
     static void parserAccessFlags(ClassRead *classRead, InstanceKlass *klass);//解析访问权限
     static void parserThisClass(ClassRead *classRead, InstanceKlass *klass);//解析类名
     static void parserSuperClass(ClassRead *classRead, InstanceKlass *klass);//解析父类名
+    static void parserInterfacesCount(ClassRead *classRead, InstanceKlass *klass);//解析接口数量
+    static void parserInterfaces(ClassRead *classRead, InstanceKlass *klass);//解析接口
 
 
 };

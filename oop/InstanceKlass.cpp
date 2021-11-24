@@ -67,3 +67,19 @@ short InstanceKlass::getSuperClass() const {
 void InstanceKlass::setSuperClass(short superClass) {
     InstanceKlass::superClass = superClass;
 }
+
+short InstanceKlass::getInterfacesCount() const {
+    return interfacesCount;
+}
+
+void InstanceKlass::setInterfacesCount(short interfacesCount) {
+    InstanceKlass::interfacesCount = interfacesCount;
+}
+
+InterfacesInfo *InstanceKlass::getInterfaces() const {
+    return interfaces;
+}
+
+void InstanceKlass::setInterfaces(InterfacesInfo *interfaces) {
+    InstanceKlass::interfaces = interfaces;
+}

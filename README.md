@@ -237,9 +237,11 @@ InstanceKlass *ClassFileParser::Parser(ClassRead *classRead) {
 }
 
 void ClassFileParser::checkAndPutVersion(ClassRead *classRead, InstanceKlass *klass) {
-    klass->setMinorVersion(classRead->readByTwoByte());
-    klass->setMajorVersion(classRead->readByTwoByte());
-    switch (klass->getMajorVersion()) {
+    klass->setMinorVersion(classRead->readByTwoByte());//读取两个字节作为次版本号set进InstanceKlass属性
+    klass->setMajorVersion(classRead->readByTwoByte());//读取两个字节作为主版本号set进InstanceKlass属性
+    printf("次版本号：%d\n", klass->getMinorVersion());
+    printf("主版本号：%d\n", klass->getMajorVersion());
+    switch (klass->getMajorVersion()) {//校验版本号是否在允许范围内
         case 46:
         case 47:
         case 48:
@@ -374,35 +376,34 @@ void ClassFileParser::parserConstantPool(ClassRead *classRead, InstanceKlass *kl
 
 ```c++
 void ClassFileParser::parserConstantPool(ClassRead *classRead, InstanceKlass *klass) {
-    klass->setConstantPool(new ConstantPool);
+    klass->setConstantPool(new ConstantPool);//为常量池初始化内存空间
     ConstantPool *constantPool = klass->getConstantPool();
-    constantPool->length = klass->getConstantPoolCount();
-    constantPool->tag = new char[klass->getConstantPoolCount()];
+    constantPool->tag = new char[klass->getConstantPoolCount()];//根据常量池数量初始化常量池数据区的内存空间
 
     for (int i = 1; i < klass->getConstantPoolCount(); i++) {
-        unsigned char tag = classRead->readByOneByte();
-        *(constantPool->tag + i) = tag;
-        switch (tag) {
+        unsigned char tag = classRead->readByOneByte();//读取一个字节获取到类型的映射值
+        *(constantPool->tag + i) = tag;//存储类型
+        switch (tag) {//根据不同的类型，有不同的处理方式，主要是读取的字节数不同
             case CONSTANT_Utf8: {
-                unsigned short len = classRead->readByTwoByte();
-                char *target = new char[len + 1];
-                classRead->readByFreeByte(len, target);
-                (constantPool->info[i]) = target;
-                printf("第%d个，类型utf-8，值%s\n", i, constantPool->info[i]);
+                unsigned short len = classRead->readByTwoByte();//读两个字节作为utf-8的字节长度
+                char *target = new char[len + 1]; //申请len+1长度的字节内存，c语言最后一位需要用'\0'填充
+                classRead->readByFreeByte(len, target);//读取len个字节
+                (constantPool->data[i]) = target;//存储在常量池
+                printf("第%d个，类型utf-8，值%s\n", i, constantPool->data[i]);
                 break;
             }
             case CONSTANT_Integer: {
                 char *temp = new char;
-                *temp = classRead->readByFourByte();
-                constantPool->info[i] = temp;
-                printf("第%d个，类型Integer，值%d\n", i, *constantPool->info[i]);
+                *temp = classRead->readByFourByte(); //读取四个字节
+                constantPool->data[i] = temp;//存储在常量池
+                printf("第%d个，类型Integer，值%d\n", i, *constantPool->data[i]);
                 break;
             }
             case CONSTANT_Float: {
                 char *temp = new char;
-                *temp = classRead->readByFourByte();
-                constantPool->info[i] = temp;
-                printf("第%d个，类型Float，值%d\n", i, *constantPool->info[i]);
+                *temp = classRead->readByFourByte();//读取四个字节
+                constantPool->data[i] = temp;//存储在常量池
+                printf("第%d个，类型Float，值%d\n", i, *constantPool->data[i]);
                 break;
             }
             case CONSTANT_Long: {
@@ -415,37 +416,37 @@ void ClassFileParser::parserConstantPool(ClassRead *classRead, InstanceKlass *kl
             }
             case CONSTANT_Class: {
                 char *temp = new char;
-                *temp = classRead->readByTwoByte();
-                constantPool->info[i] = temp;
-                printf("第%d个，类型Class，值%d\n", i, *constantPool->info[i]);
+                *temp = classRead->readByTwoByte();//读取两个字节
+                constantPool->data[i] = temp;//存储在常量池
+                printf("第%d个，类型Class，值%d\n", i, *constantPool->data[i]);
                 break;
             }
             case CONSTANT_String: {
                 char *temp = new char[3];
-                *temp = classRead->readByTwoByte();
+                *temp = classRead->readByTwoByte();//读取两个字节
                 temp[2] = '\0';
-                constantPool->info[i] = temp;
-                printf("第%d个，类型String，值%d\n", i, *constantPool->info[i]);
+                constantPool->data[i] = temp;//存储在常量池
+                printf("第%d个，类型String，值%d\n", i, *constantPool->data[i]);
                 break;
             }
             case CONSTANT_Fieldref:
             case CONSTANT_Methodref:
             case CONSTANT_InterfaceMethodref: {
-                int *temp = new int;
-                short classIndex = classRead->readByTwoByte();
-                short nameAndTypeIndex = classRead->readByTwoByte();
-                *temp = htonl(classIndex << 16 | nameAndTypeIndex);
-                (constantPool->info[i]) = (char *) temp;
-                printf("第%d个，类型file、method、Interface Methodref，值%X\n", i, htonl(*(int *) constantPool->info[i]));
+                int *temp = new int;//申请四个字节的内存空间
+                short classIndex = classRead->readByTwoByte();//读取两个字节
+                short nameAndTypeIndex = classRead->readByTwoByte();//读取两个字节
+                *temp = htonl(classIndex << 16 | nameAndTypeIndex);//左16位存储classIndex 右16为存储nameAndTypeIndex
+                (constantPool->data[i]) = (char *) temp;//存储在常量池
+                printf("第%d个，类型file、method、Interface Methodref，值%X\n", i, htonl(*(int *) constantPool->data[i]));
                 break;
             }
             case CONSTANT_NameAndType: {
                 int *temp = new int;
-                short nameIndex = classRead->readByTwoByte();
-                short descriptorIndex = classRead->readByTwoByte();
-                *temp = htonl(nameIndex << 16 | descriptorIndex);
-                (constantPool->info[i]) = (char *) temp;
-                printf("第%d个，类型NameAndType，值%X\n", i, htonl(*(int *) constantPool->info[i]));
+                short nameIndex = classRead->readByTwoByte();//读取两个字节
+                short descriptorIndex = classRead->readByTwoByte();//读取两个字节
+                *temp = htonl(nameIndex << 16 | descriptorIndex);//左16位存储classIndex 右16为存储nameAndTypeIndex
+                (constantPool->data[i]) = (char *) temp;//存储在常量池
+                printf("第%d个，类型NameAndType，值%X\n", i, htonl(*(int *) constantPool->data[i]));
                 break;
             }
             default:
@@ -547,9 +548,8 @@ class InstanceKlass {
 
 ```c++
 void ClassFileParser::parserAccessFlags(ClassRead *classRead, InstanceKlass *klass) {
-    unsigned short acc = classRead->readByTwoByte();
-    klass->setAccessFlags(acc);
-    printf("访问权限：%d\n", acc);
+    klass->setAccessFlags(classRead->readByTwoByte());//读取两个字节，set进InstanceKlass属性
+    printf("访问权限：%d\n", klass->getAccessFlags());
 };
 
 ```
@@ -613,13 +613,13 @@ ClassFileParser中新增parserThisClass、parserSuperClass方法分别解析类�
 ```c++
 
 void ClassFileParser::parserThisClass(ClassRead *classRead, InstanceKlass *klass) {
-klass->setThisClass(classRead->readByTwoByte());
-printf("类名：%X\n", klass->getThisClass());
+    klass->setThisClass(classRead->readByTwoByte());//读取两个字节，set进InstanceKlass属性
+    printf("类名：%X\n", klass->getThisClass());
 };
 
 void ClassFileParser::parserSuperClass(ClassRead *classRead, InstanceKlass *klass) {
-klass->setSuperClass(classRead->readByTwoByte());
-printf("父类名：%X\n", klass->getSuperClass());
+    klass->setSuperClass(classRead->readByTwoByte());//读取两个字节，set进InstanceKlass属性
+    printf("父类名：%X\n", klass->getSuperClass());
 };
 
 ```
@@ -631,10 +631,10 @@ printf("父类名：%X\n", klass->getSuperClass());
 int main() {
     ClassRead *classRead = ClassRead::readByPath("/Users/e/Documents/github/JDK/out/production/JDK/HelloJVM.class");//换成你自己的path
     InstanceKlass *klass = ClassFileParser::Parser(classRead);
-    int indexClass = *(klass->getConstantPool()->data[klass->getThisClass()]);
-    int indexSuperClass = *(klass->getConstantPool()->data[klass->getSuperClass()]);
-    printf("类名：%s\n", klass->getConstantPool()->data[indexClass]);
-    printf("父类名：%s\n", klass->getConstantPool()->data[indexSuperClass]);
+    int indexClass = *(klass->getConstantPool()->data[klass->getThisClass()]);//获取常量池索引
+    int indexSuperClass = *(klass->getConstantPool()->data[klass->getSuperClass()]);//获取常量池索引
+    printf("类名：%s\n", klass->getConstantPool()->data[indexClass]);//再次索引获取name
+    printf("父类名：%s\n", klass->getConstantPool()->data[indexSuperClass]);//再次索引获取name
     return 0;
 }
 
@@ -648,6 +648,75 @@ int main() {
 ---
 
 * 解析"接口"
+
+  **本次commit :** 
+
+由于Java可实现多个接口，意味着接口的数量是可变的，所以先用两个字节指明接口数量count，接下来才是接口。那么我们只需要for循环count次读取接口信息就可以完成接口的解析,所谓的解析，就是往后读取两个字节获得常量池索引，存储到InstanceKlass属性中
+,与前文中的解析"类名"一样，这个常量池索引的值又是一个常量池索引，意味着需要在常量池索引两次，就可以获取到接口的全限定名。
+<br/>
+于是创建C++类InterfacesInfo用来描述接口的常量池索引和名字:
+```c++
+class InterfacesInfo {
+    short constantPoolIndex;
+    string interfacesName;
+};
+```
+在InstanceKlass中新增接口数量interfacesCount和接口属性interfaces:
+
+```c++
+
+class InstanceKlass {
+int magic; //魔数，CAFEBABE:用来校验是否是.class文件
+……
+short interfacesCount;//接口数量
+InterfacesInfo *interfaces;//接口
+}
+
+```
+ClassFileParser中新建解析接口数量和解析接口的方法parserInterfacesCount、parserInterfaces：
+
+```c++
+
+void ClassFileParser::parserInterfacesCount(ClassRead *classRead, InstanceKlass *klass) {
+    klass->setInterfacesCount(classRead->readByTwoByte());
+    printf("接口数量：%d\n", klass->getInterfacesCount());
+}
+
+void ClassFileParser::parserInterfaces(ClassRead *classRead, InstanceKlass *klass) {
+    if (klass->getInterfacesCount() == 0) {
+        return;//未实现接口就不解析了
+    }
+    klass->setInterfaces(new InterfacesInfo[klass->getInterfacesCount()]);
+    InterfacesInfo *interfaces = klass->getInterfaces();
+    for (int i = 0; i < klass->getInterfacesCount(); i++) {
+        unsigned short constantPoolIndex = classRead->readByTwoByte();//往后读取两个字节作为常量池索引
+        int index = *(klass->getConstantPool()->data[constantPoolIndex]);//获取新的常量池索引
+        string name = klass->getConstantPool()->data[index];//第二次索引取得全限定名
+        printf("第%d个接口，name:%s,索引位置：%d", i + 1, name.c_str(), constantPoolIndex);
+        *(interfaces + i) = *(new InterfacesInfo(constantPoolIndex, name));//将接口set进InstanceKlass属性中
+    }
+};
+```
+我们来做一个测试：
+
+```c++
+int main() {
+    ClassRead *classRead = ClassRead::readByPath("/Users/e/Documents/github/JDK/out/production/JDK/HelloJVM.class");//换成你自己的path
+    InstanceKlass *klass = ClassFileParser::Parser(classRead);
+    return 0;
+}
+```
+输出：<br/><br/>
+接口数量：0
+
+<br/>是的，我们的HelloJVM没有实现接口。
+<br/><br/>
+
+小总结：本章节共读了4个字节，分别表示接口数量、接口名字的常量池索引，然后将他们存储在InstanceKlass属性中。
+
+---
+
+* 解析"类字段"
 
   **本次commit :** 
 
