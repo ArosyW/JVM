@@ -12,8 +12,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="5bcc33db-55b5-4b9a-b47c-e1d54bcdc620" name="Default Changelist" comment="UPDATE README">
-      <change afterPath="$PROJECT_DIR$/oop/InterfacesInfo.cpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/oop/InterfacesInfo.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/oop/FieldsInfo.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/oop/FieldsInfo.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
@@ -66,7 +66,7 @@
         <option name="CLION.EXTERNAL.BUILD" enabled="true" />
       </method>
     </configuration>
-    <configuration name="JVM" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JVM" TARGET_NAME="JVM" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="JVM" RUN_TARGET_NAME="JVM">
+    <configuration name="JVM" type="CMakeRunConfiguration" factoryName="Application" temporary="true" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JVM" TARGET_NAME="JVM" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="JVM" RUN_TARGET_NAME="JVM">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
@@ -76,6 +76,11 @@
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="CMake Application.JVM" />
+      </list>
+    </recent_temporary>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="SvnConfiguration">

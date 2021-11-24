@@ -7,6 +7,7 @@
 
 #include "ConstantPool.h"
 #include "InterfacesInfo.h"
+#include "FieldsInfo.h"
 
 class InstanceKlass {
     int magic; //魔数，CAFEBABE:用来校验是否是.class文件
@@ -19,11 +20,21 @@ class InstanceKlass {
     short superClass;//父类名
     short interfacesCount;//接口数量
     InterfacesInfo *interfaces;//接口
+    short fieldsCount;//字段数量
+    FieldsInfo *fieldsInfo;//字段
 
- /**
- * 以下为getter && setter && 构造方法
- */
+    /**
+    * 以下为getter && setter && 构造方法
+    */
 public:
+    short getFieldsCount() const;
+
+    void setFieldsCount(short fieldsCount);
+
+    FieldsInfo *getFieldsInfo() const;
+
+    void setFieldsInfo(FieldsInfo *fieldsInfo);
+
     short getInterfacesCount() const;
 
     void setInterfacesCount(short interfacesCount);

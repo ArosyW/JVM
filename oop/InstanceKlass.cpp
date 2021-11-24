@@ -83,3 +83,19 @@ InterfacesInfo *InstanceKlass::getInterfaces() const {
 void InstanceKlass::setInterfaces(InterfacesInfo *interfaces) {
     InstanceKlass::interfaces = interfaces;
 }
+
+short InstanceKlass::getFieldsCount() const {
+    return fieldsCount;
+}
+
+void InstanceKlass::setFieldsCount(short fieldsCount) {
+    InstanceKlass::fieldsCount = fieldsCount;
+}
+
+FieldsInfo *InstanceKlass::getFieldsInfo() const {
+    return fieldsInfo;
+}
+
+void InstanceKlass::setFieldsInfo(FieldsInfo *fieldsInfo) {
+    InstanceKlass::fieldsInfo = fieldsInfo;
+}

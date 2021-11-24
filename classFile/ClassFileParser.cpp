@@ -15,6 +15,8 @@ InstanceKlass *ClassFileParser::Parser(ClassRead *classRead) {
     parserSuperClass(classRead, klass);//父类名
     parserInterfacesCount(classRead, klass);//解析出接口数量
     parserInterfaces(classRead, klass);//根据数量解析接口
+    parserFieldsCount(classRead, klass);//解析字段数量
+    parserFieldsInfo(classRead, klass);//根据数量解析字段
     return klass;
 }
 
@@ -166,5 +168,25 @@ void ClassFileParser::parserInterfaces(ClassRead *classRead, InstanceKlass *klas
         string name = klass->getConstantPool()->data[index];//第二次索引取得全限定名
         printf("第%d个接口，name:%s,索引位置：%d", i + 1, name.c_str(), constantPoolIndex);
         *(interfaces + i) = *(new InterfacesInfo(constantPoolIndex, name));//将接口set进InstanceKlass属性中
+    }
+};
+
+void ClassFileParser::parserFieldsCount(ClassRead *classRead, InstanceKlass *klass) {
+    klass->setFieldsCount(classRead->readByTwoByte());//往后读取两个字节set进InstanceKlass中的字段数量属性
+    printf("字段数量：%d\n", klass->getFieldsCount());
+}
+
+void ClassFileParser::parserFieldsInfo(ClassRead *classRead, InstanceKlass *klass) {
+    klass->setFieldsInfo(new FieldsInfo[klass->getFieldsCount()]);//按照字段数量初始化字段内存空间
+    FieldsInfo *fieldsInfo = klass->getFieldsInfo();
+    for (int i = 0; i < klass->getFieldsCount(); i++) {//循环字段数量count次，解析字段
+        FieldsInfo *fields = (fieldsInfo + i);
+        fields->setAccessFlag(classRead->readByTwoByte());//往后读取两个字节set进FieldsInfo的访问权限
+        fields->setNameIndex(classRead->readByTwoByte());//往后读取两个字节set进FieldsInfo的name
+        fields->setDescriptorIndex(classRead->readByTwoByte());//往后读取两个字节set进FieldsInfo的类型描述
+        fields->setAttributesCount(classRead->readByTwoByte());//往后读取两个字节set进FieldsInfo的附加属性数量
+        printf("field 解析：\n access:%X,\n nameIndex:%X\n descriptorIndex:%X \n attributesCount:%X\n",
+               fields->getAccessFlag(), fields->getNameIndex(), fields->getDescriptorIndex(),
+               fields->getAttributesCount());
     }
 };

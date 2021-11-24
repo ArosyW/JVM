@@ -667,10 +667,10 @@ class InterfacesInfo {
 ```c++
 
 class InstanceKlass {
-int magic; //魔数，CAFEBABE:用来校验是否是.class文件
+    int magic; //魔数，CAFEBABE:用来校验是否是.class文件
 ……
-short interfacesCount;//接口数量
-InterfacesInfo *interfaces;//接口
+    short interfacesCount;//接口数量
+    InterfacesInfo *interfaces;//接口
 }
 
 ```
@@ -718,6 +718,126 @@ int main() {
 ---
 
 * 解析"类字段"
+
+  **本次commit :** 
+
+"类字段"指的是成员变量，为了模拟这种情况，我们修改一下我们的Java代码，新定义一个"out"属性，然后编译，如下：
+```java
+public class HelloJVM {
+    static int out = 9;
+    public static void main(String[] args) {
+        System.out.println("Hello JVM");
+    }
+}
+```
+由于字段的数量也是可变的，所以先由两个字节指明字段数量count，然后每一个字段给出8个字节，按顺序这8个字节表示的含义分别为：
+访问权限、name的常量池索引、类型描述的常量池索引、附加属性数量length，最后解析length个附加属性。对这些含义做个解释，
+<br/><br/>
+访问权限给出权限映射表：
+
+|  类型   | 映射值  | 
+|  ----  | ----  |
+|   PUBLIC               |    0x0001 |
+|   FINAL            |    0x0010 |
+|  PRIVATE            |   0x002 |
+|  PROTECTED   |   0x0004 |
+|   STATIC              |    0x0008 |
+|   VOLATILE             |    0x0040 |
+|   TRANSIENT             |    0x0080 |
+|   SYNTHETIC             |    0x1000 |
+|   ENUM             |    0x4000 |
+
+name的常量池索引：用该索引查到常量池ConstantPool可以获得字段的名字。
+<br/><br/>
+类型描述的常量池索引：用该索引查到常量池ConstantPool可以获得字段的类型描述符号，下面给出类型与描述符的对应关系：
+
+|  常量池类型描述符   | 类型  |
+|  ----  | ----  |
+|   B               |    byte |
+|   C            |    char |
+|  D            |   double |
+|  F   |   float |
+|   I              |    int |
+|   J             |    long |
+|   S             |    short |
+|   Z             |    boolean |
+|   V             |    void |
+|   L             |    对象类型，如Ljava/lang/Object |
+
+附加属性：字段可以在附加属性有更多的描述，此处我们为0，属性的详细内容放到后面讲。
+
+
+我们新建FieldsInfo类用来描述字段：
+```c++
+class FieldsInfo {
+    short accessFlag;
+    short nameIndex;
+    short descriptorIndex;
+    short attributesCount;
+};
+```
+InstanceKlass中新增字段数量fieldsCount和字段fieldsInfo：
+
+```c++
+
+class InstanceKlass {
+    int magic; //魔数，CAFEBABE:用来校验是否是.class文件
+……
+    short fieldsCount;//字段数量
+    FieldsInfo *fieldsInfo;//字段
+}
+
+```
+ClassFileParser中新建解析接口数量和解析接口的方法parserInterfacesCount、parserInterfaces：
+```c++
+void ClassFileParser::parserFieldsCount(ClassRead *classRead, InstanceKlass *klass) {
+    klass->setFieldsCount(classRead->readByTwoByte());//往后读取两个字节set进InstanceKlass中的字段数量属性
+    printf("字段数量：%d\n", klass->getFieldsCount());
+}
+
+void ClassFileParser::parserFieldsInfo(ClassRead *classRead, InstanceKlass *klass) {
+    klass->setFieldsInfo(new FieldsInfo[klass->getFieldsCount()]);//按照字段数量初始化字段内存空间
+    FieldsInfo *fieldsInfo = klass->getFieldsInfo();
+    for (int i = 0; i < klass->getFieldsCount(); i++) {//循环字段数量count次，解析字段
+        FieldsInfo *fields = (fieldsInfo + i);
+        fields->setAccessFlag(classRead->readByTwoByte());//往后读取两个字节set进FieldsInfo的访问权限
+        fields->setNameIndex(classRead->readByTwoByte());//往后读取两个字节set进FieldsInfo的name
+        fields->setDescriptorIndex(classRead->readByTwoByte());//往后读取两个字节set进FieldsInfo的类型描述
+        fields->setAttributesCount(classRead->readByTwoByte());//往后读取两个字节set进FieldsInfo的附加属性数量
+        printf("field 解析：\n access:%X,\n nameIndex:%X\n descriptorIndex:%X \n attributesCount:%X\n",
+               fields->getAccessFlag(), fields->getNameIndex(), fields->getDescriptorIndex(),
+               fields->getAttributesCount());
+    }
+};
+```
+我们来做一个测试：
+
+```c++
+int main() {
+    ClassRead *classRead = ClassRead::readByPath("/Users/qsc/Documents/github/JDK/out/production/JDK/HelloJVM.class");//换成你自己的path
+    InstanceKlass *klass = ClassFileParser::Parser(classRead);
+    printf("字段访问权限：%d\n", klass->getFieldsInfo()->getAccessFlag());
+    printf("字段名字：%s\n",klass->getConstantPool()->data[klass->getFieldsInfo()->getNameIndex()]);
+    printf("字段类型：%s\n",klass->getConstantPool()->data[klass->getFieldsInfo()->getDescriptorIndex()]);
+    printf("字段附加属性数量：%d\n", klass->getFieldsInfo()->getAttributesCount());
+    return 0;
+}
+```
+输出：<br/><br/>
+字段访问权限：8<br/>
+字段名字：out<br/>
+字段类型：I<br/>
+字段附加属性数量：0<br/>
+
+小总结：按照约定的字段结构成功存储进了InstanceKlass
+
+|  字段数量   | 访问权限  | 名字索引  | 类型索引  |  附加属性数量  | 附加属性  |
+|  ----  | ----  | ----  | ----  | ----  | ----  |
+|   2字节 |    2字节 |  2字节 |  2字节 | 2字节 | *字节 |
+
+---
+
+* 解析"方法"
 
   **本次commit :** 
 

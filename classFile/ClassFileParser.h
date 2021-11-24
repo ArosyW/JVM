@@ -20,6 +20,8 @@ public:
     static void parserSuperClass(ClassRead *classRead, InstanceKlass *klass);//解析父类名
     static void parserInterfacesCount(ClassRead *classRead, InstanceKlass *klass);//解析接口数量
     static void parserInterfaces(ClassRead *classRead, InstanceKlass *klass);//解析接口
+    static void parserFieldsCount(ClassRead *classRead, InstanceKlass *klass);//解析字段数量
+    static void parserFieldsInfo(ClassRead *classRead, InstanceKlass *klass);//解析字段
 
 
 };
