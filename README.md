@@ -839,7 +839,7 @@ int main() {
 
 * 解析"方法"
 
-  **本次commit :** 
+  **本次commit :** 0a96cbf9fe2199bdb7cd19d55b29a7d4edcd39e7
 
 方法的数量是不确定的，因此先用两个字节指明方法数量count。下面是每一个方法所包含的属性：
 
@@ -950,7 +950,7 @@ void ClassFileParser::parserMethodInfo(ClassRead *classRead, InstanceKlass *klas
 
 ```
 
-更详细的解析请看本次commit:
+更详细的解析请看本次commit: 0a96cbf9fe2199bdb7cd19d55b29a7d4edcd39e7
 <br/><br/>
 我们来做一个测试：
 
