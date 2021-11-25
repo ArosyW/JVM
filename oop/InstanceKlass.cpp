@@ -99,3 +99,19 @@ FieldsInfo *InstanceKlass::getFieldsInfo() const {
 void InstanceKlass::setFieldsInfo(FieldsInfo *fieldsInfo) {
     InstanceKlass::fieldsInfo = fieldsInfo;
 }
+
+short InstanceKlass::getMethodCount() const {
+    return methodCount;
+}
+
+void InstanceKlass::setMethodCount(short methodCount) {
+    InstanceKlass::methodCount = methodCount;
+}
+
+MethodInfo *InstanceKlass::getMethodInfo() const {
+    return methodInfo;
+}
+
+void InstanceKlass::setMethodInfo(MethodInfo *methodInfo) {
+    InstanceKlass::methodInfo = methodInfo;
+}

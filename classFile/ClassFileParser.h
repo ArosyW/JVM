@@ -7,6 +7,9 @@
 
 #include "../oop/InstanceKlass.h"
 #include "../Stream/ClassRead.h"
+#include "../oop/LineNumberTable.h"
+#include "../oop/LocalVariableTable.h"
+#include "../oop/CodeAttributeInfo.h"
 
 class ClassFileParser {
 public:
@@ -22,6 +25,10 @@ public:
     static void parserInterfaces(ClassRead *classRead, InstanceKlass *klass);//解析接口
     static void parserFieldsCount(ClassRead *classRead, InstanceKlass *klass);//解析字段数量
     static void parserFieldsInfo(ClassRead *classRead, InstanceKlass *klass);//解析字段
+    static void parserMethodCount(ClassRead *classRead, InstanceKlass *klass);//解析方法数量
+    static void parserMethodInfo(ClassRead *classRead, InstanceKlass *klass);//解析方法
+    static void parserLineNumberTable(ClassRead *classRead, CodeAttributeInfo* codeAttributeInfo, string attrName, int nameIndex, InstanceKlass *klass);
+    static void parseLocalVariableTable(ClassRead *classRead, CodeAttributeInfo* codeAttributeInfo, string attrName, int nameIndex, InstanceKlass *klass);
 
 
 };

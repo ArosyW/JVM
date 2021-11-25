@@ -8,6 +8,7 @@
 #include "ConstantPool.h"
 #include "InterfacesInfo.h"
 #include "FieldsInfo.h"
+#include "MethodInfo.h"
 
 class InstanceKlass {
     int magic; //魔数，CAFEBABE:用来校验是否是.class文件
@@ -22,11 +23,21 @@ class InstanceKlass {
     InterfacesInfo *interfaces;//接口
     short fieldsCount;//字段数量
     FieldsInfo *fieldsInfo;//字段
+    short methodCount;//方法数量
+    MethodInfo *methodInfo;//方法
 
-    /**
-    * 以下为getter && setter && 构造方法
-    */
+/**
+   * 以下为getter && setter && 构造方法
+*/
 public:
+    short getMethodCount() const;
+
+    void setMethodCount(short methodCount);
+
+    MethodInfo *getMethodInfo() const;
+
+    void setMethodInfo(MethodInfo *methodInfo);
+
     short getFieldsCount() const;
 
     void setFieldsCount(short fieldsCount);

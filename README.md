@@ -841,5 +841,150 @@ int main() {
 
   **本次commit :** 
 
+方法的数量是不确定的，因此先用两个字节指明方法数量count。下面是每一个方法所包含的属性：
 
+  | 访问权限  | 名字索引  | 方法描述索引  |  附加属性数量  | 附加属性  |
+ | ----  | ----  | ----  | ----  | ----  |
+ |    2字节 |  2字节 |  2字节 | 2字节 | *字节 |
+
+其中附加属性是用来修饰这个方法的一些额外的信息，例如方法一般包括一个成为Code的属性，是JVM提供的指令的集合，用来描述这个方法如何执行的，"指令"后面在执行器篇将会详细讲解，此处我们仅仅需要把它存储在InstanceKlass即可。
+
+其他的附加属性过多，不列在这里了，可以查阅《Java虚拟机规范》4.7章节。
+
+下面给出附加属性Code的结构：
+
+ | 名字索引  | 当前属性长度  |  最大栈深度  | 当前方法的局部变量表个数  | Code（指令）长度length  | 指令  | exception_table_length  |  exception_table |  附加属性数量  | 附加属性  |
+ | ----  | ----  | ----  | ----  | ----  | ----  |  ----  |  ----  | ----  |  ----  | 
+|    2字节 |  4字节 |  2字节 | 2字节 | 4字节  | length字节 | 2字节  | *字节 | 2字节  | *字节
+
+
+想必看完这么长的表格你已经疯掉了吧，稍微解释一下。
+
+* 名字索引：Class常量池索引
+* 当前属性长度：当前属性即名为"Code"的属性，指明了这个属性此次占用多少字节。
+* 最大栈深度：方法在执行的时候会在栈中创建"栈帧"，也成为"操作数栈"，最大栈深度即指方法在执行时操作数栈中最大容纳的操作数的数量。
+* 当前方法的局部变量表个数：方法中声明的局部变量的数量
+* Code（指令）长度length：当前方法的JVM指令的个数
+* 指令：当前方法的JVM指令
+* exception_table_length：异常处理器的个数，一般方法中有try、catch才会有exception_table。
+* exception_table：包含4个属性，我们暂不处理异常，可查阅《Java虚拟机规范》4.7.3
+* 附加属性：一般为LineNumberTable、LocalVariableTable，属于调试信息，不是运行时必须的，不必太关注，按照约定存储起来就好。
+  * LineNumberTable：
+
+    | name的常量池索引  | 属性长度  | tableLength  |  table 
+    | ----  | ----  | ----  | ----  | 
+    |    2字节 |  4字节 |  2字节 |  *字节 | 
+
+      给出table的结构：
+
+      | start_pc  | 行号  | 
+    | ----  | ----  | 
+  |    2字节 |  2字节 |  
+
+  * LocalVariableTable：
+  
+    | name的常量池索引  | 属性长度  | 局部变量Length   |  table
+    | ----  | ----  | ----  | ----  
+    |    2字节 |  4字节 |  2字节 |  *字节
+
+    给出局部变量table的结构：
+
+    | start_pc  | length  | name常量池索引  | 类型的常量池索引  | 局部变量表索引
+    | ----  | ----  | ----  | ----  | ----  | 
+    |    2字节 |  2字节 |   2字节 |   2字节 |  2字节 |  
+
+<br/>
+方法的解析东西略微多一些，显然我们需要嵌套for循环去解析，上面已经列出了我们解析所需要的所有约定，大部分与我们初步实现JVM无关，按约定解析就好，无需纠结他们是做什么用的。需要重点关注的是"指令"，这是我们后面执行方法所依赖的。
+<br/>
+
+于是我们需要新建C++类来映射这些属性，以达到存储的目的：
+MethodInfo、CodeAttributeInfo、AttributeInfo、LineNumberTable、LineNumberTable、BytecodeStream。
+
+新增方法parserMethodCount、parserMethod、parserLineNumberTable、parseLocalVariableTable分别用来解析方法数量、解析方法、解析LineNumberTable、解析LocalVariableTable。
+
+重点看一下parserMethod方法：
+```c++
+void ClassFileParser::parserMethodInfo(ClassRead *classRead, InstanceKlass *klass) {
+    klass->setMethodInfo(new MethodInfo[klass->getMethodCount()]);//初始化InstanceKlass中的methodInfo的内存空间
+    for (int i = 0; i < klass->getMethodCount(); i++) {
+        MethodInfo *method = new MethodInfo;
+        method->setBelongKlass(klass);//将方法与所属InstanceKlass关联
+        method->setAccessFlags(classRead->readByTwoByte());//存储方法的访问权限
+        method->setNameIndex(classRead->readByTwoByte());//存储方法的访问权限
+        method->setMethodName((string) klass->getConstantPool()->data[method->getNameIndex()]);//存储方法的名字
+        printf("解析方法%s\n", method->getMethodName().c_str());
+        method->setDescriptorIndex(classRead->readByTwoByte());//存储方法的描述（包含了参数、返回值）
+        method->setAttributesCount(classRead->readByTwoByte());//存储属性数量
+        method->initCodeAttributeInfo();
+        *(klass->getMethodInfo() + i) = *method;
+        for (int j = 0; j < method->getAttributesCount(); j++) {
+            CodeAttributeInfo *codeAttributeInfo = new CodeAttributeInfo;
+            codeAttributeInfo->setAttrNameIndex(classRead->readByTwoByte());//存储属性名字的常量池索引
+            codeAttributeInfo->setAttrLength(classRead->readByFourByte());//存储属性长度
+            codeAttributeInfo->setMaxStack(classRead->readByTwoByte());//存储最大栈深度
+            codeAttributeInfo->setMaxLocals(classRead->readByTwoByte());//存储局部变量表数量
+            codeAttributeInfo->setCodeLength(classRead->readByFourByte());//存储指令数量
+            BytecodeStream *bytecodeStream = new BytecodeStream(method, codeAttributeInfo,
+                                                                codeAttributeInfo->getCodeLength(), 0,
+                                                                new char[codeAttributeInfo->getCodeLength()]);
+            classRead->readByFreeByte(codeAttributeInfo->getCodeLength(), bytecodeStream->getCodes()); //重点： 将方法的JVM指令存储在bytecodeStream
+            codeAttributeInfo->setCode(bytecodeStream);
+            printf("\t第%d个属性，access flag:%X name index : %X  stack:%X container:%X  code length:%X \n", j,
+                   method->getAccessFlags(), codeAttributeInfo->getAttrNameIndex(), codeAttributeInfo->getMaxStack(),
+                   codeAttributeInfo->getMaxLocals(), codeAttributeInfo->getCodeLength());
+            codeAttributeInfo->setExceptionTableLength(classRead->readByTwoByte());//存储Exception表长度，此处暂时为0，因为我们没有任何异常需要处理
+            codeAttributeInfo->setAttributesCount(classRead->readByTwoByte());//存储属性长度
+            method->setAttributeInfo(codeAttributeInfo, j);
+            for (int k = 0; k < codeAttributeInfo->getAttributesCount(); k++) {//循环解析属性
+                int nameIndex = classRead->readByTwoByte();
+                string attrName = klass->getConstantPool()->data[nameIndex];
+                if ("LineNumberTable" == attrName) {//解析LineNumberTable
+                    parserLineNumberTable(classRead, codeAttributeInfo, attrName, nameIndex, klass);
+                } else if ("LocalVariableTable" == attrName) {//解析LocalVariableTable
+                    parseLocalVariableTable(classRead, codeAttributeInfo, attrName, nameIndex, klass);
+                }
+            }
+        }
+    }
+};
+
+```
+
+更详细的解析请看本次commit:
+<br/><br/>
+我们来做一个测试：
+
+```c++
+int main() {
+    ClassRead *classRead = ClassRead::readByPath("/Users/qsc/Documents/github/JDK/out/production/JDK/HelloJVM.class");//换成你自己的path
+    InstanceKlass *klass = ClassFileParser::Parser(classRead);
+    return 0;
+}
+```
+<br/>
+
+输出：<br/>
+
+```
+方法数量：3
+解析方法<init>
+第0个属性，access flag:1 name index : B  stack:1 container:1  code length:5
+lineNumberTable: name index:12,attr len:6, table len:1
+第0个属性，start pc : 0,line numnber:1
+LocalVariableTable:第0个属性，start pc:0,length:5,name index:14,descrip:15,index:0
+解析方法main
+第0个属性，access flag:9 name index : B  stack:2 container:1  code length:8
+lineNumberTable: name index:12,attr len:10, table len:2
+第0个属性，start pc : 0,line numnber:4
+lineNumberTable: name index:12,attr len:10, table len:2
+第1个属性，start pc : 7,line numnber:5
+LocalVariableTable:第0个属性，start pc:0,length:8,name index:18,descrip:19,index:0
+解析方法<clinit>
+第0个属性，access flag:8 name index : B  stack:1 container:0  code length:6
+lineNumberTable: name index:12,attr len:6, table len:1
+第0个属性，start pc : 0,line numnber:2
+```
+小总结：如果这对你来说过于陌生，你只需要知道我们把方法的JVM指令存起来了就可以跳过本部分了。另外.class的解析我们已经走了99%了。
+
+---
 

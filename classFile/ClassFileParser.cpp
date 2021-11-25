@@ -3,6 +3,7 @@
 //
 #include "ClassFileParser.h"
 #include "../util/BasicType.h"
+#include "../inteoreter/BytecodeStream.h"
 
 InstanceKlass *ClassFileParser::Parser(ClassRead *classRead) {
     InstanceKlass *klass = new InstanceKlass;
@@ -17,6 +18,8 @@ InstanceKlass *ClassFileParser::Parser(ClassRead *classRead) {
     parserInterfaces(classRead, klass);//根据数量解析接口
     parserFieldsCount(classRead, klass);//解析字段数量
     parserFieldsInfo(classRead, klass);//根据数量解析字段
+    parserMethodCount(classRead, klass);//解析方法数量
+    parserMethodInfo(classRead, klass);//解析方法
     return klass;
 }
 
@@ -189,4 +192,106 @@ void ClassFileParser::parserFieldsInfo(ClassRead *classRead, InstanceKlass *klas
                fields->getAccessFlag(), fields->getNameIndex(), fields->getDescriptorIndex(),
                fields->getAttributesCount());
     }
+};
+
+void ClassFileParser::parserMethodCount(ClassRead *classRead, InstanceKlass *klass) {
+    klass->setMethodCount(classRead->readByTwoByte());
+    printf("方法数量：%d\n", klass->getMethodCount());
+};
+
+void ClassFileParser::parserMethodInfo(ClassRead *classRead, InstanceKlass *klass) {
+    klass->setMethodInfo(new MethodInfo[klass->getMethodCount()]);//初始化InstanceKlass中的methodInfo的内存空间
+    for (int i = 0; i < klass->getMethodCount(); i++) {
+        MethodInfo *method = new MethodInfo;
+        method->setBelongKlass(klass);//将方法与所属InstanceKlass关联
+        method->setAccessFlags(classRead->readByTwoByte());//存储方法的访问权限
+        method->setNameIndex(classRead->readByTwoByte());//存储方法的访问权限
+        method->setMethodName((string) klass->getConstantPool()->data[method->getNameIndex()]);//存储方法的名字
+        printf("解析方法%s\n", method->getMethodName().c_str());
+        method->setDescriptorIndex(classRead->readByTwoByte());//存储方法的描述（包含了参数、返回值）
+        method->setAttributesCount(classRead->readByTwoByte());//存储属性数量
+        method->initCodeAttributeInfo();
+        *(klass->getMethodInfo() + i) = *method;
+        for (int j = 0; j < method->getAttributesCount(); j++) {
+            CodeAttributeInfo *codeAttributeInfo = new CodeAttributeInfo;
+            codeAttributeInfo->setAttrNameIndex(classRead->readByTwoByte());//存储属性名字的常量池索引
+            codeAttributeInfo->setAttrLength(classRead->readByFourByte());//存储属性长度
+            codeAttributeInfo->setMaxStack(classRead->readByTwoByte());//存储最大栈深度
+            codeAttributeInfo->setMaxLocals(classRead->readByTwoByte());//存储局部变量表数量
+            codeAttributeInfo->setCodeLength(classRead->readByFourByte());//存储指令数量
+            BytecodeStream *bytecodeStream = new BytecodeStream(method, codeAttributeInfo,
+                                                                codeAttributeInfo->getCodeLength(), 0,
+                                                                new char[codeAttributeInfo->getCodeLength()]);
+            classRead->readByFreeByte(codeAttributeInfo->getCodeLength(), bytecodeStream->getCodes()); //重点： 将方法的JVM指令存储在bytecodeStream
+            codeAttributeInfo->setCode(bytecodeStream);
+            printf("\t第%d个属性，access flag:%X name index : %X  stack:%X container:%X  code length:%X \n", j,
+                   method->getAccessFlags(), codeAttributeInfo->getAttrNameIndex(), codeAttributeInfo->getMaxStack(),
+                   codeAttributeInfo->getMaxLocals(), codeAttributeInfo->getCodeLength());
+            codeAttributeInfo->setExceptionTableLength(classRead->readByTwoByte());//存储Exception表长度，此处暂时为0，因为我们没有任何异常需要处理
+            codeAttributeInfo->setAttributesCount(classRead->readByTwoByte());//存储属性长度
+            method->setAttributeInfo(codeAttributeInfo, j);
+            for (int k = 0; k < codeAttributeInfo->getAttributesCount(); k++) {//循环解析属性
+                int nameIndex = classRead->readByTwoByte();
+                string attrName = klass->getConstantPool()->data[nameIndex];
+                if ("LineNumberTable" == attrName) {//解析LineNumberTable
+                    parserLineNumberTable(classRead, codeAttributeInfo, attrName, nameIndex, klass);
+                } else if ("LocalVariableTable" == attrName) {//解析LocalVariableTable
+                    parseLocalVariableTable(classRead, codeAttributeInfo, attrName, nameIndex, klass);
+                }
+            }
+        }
+    }
+};
+
+
+void ClassFileParser::parserLineNumberTable(ClassRead *classRead, CodeAttributeInfo *codeAttributeInfo, string attrName,
+                                            int nameIndex, InstanceKlass *klass) {
+    LineNumberTable *lineNumberTable = new LineNumberTable;
+    (codeAttributeInfo->attributes)[attrName] = lineNumberTable;
+    lineNumberTable->setAttributeNameIndex(nameIndex);
+    lineNumberTable->setAttributeLength(classRead->readByFourByte());
+    lineNumberTable->setTableLen(classRead->readByTwoByte());
+    lineNumberTable->table = new LineNumberTable::Item[lineNumberTable->getTableLen()];
+    if (lineNumberTable->getTableLen() == 0) {
+        printf("table len =0\n");
+        return ;
+    }
+    for (int i = 0; i < lineNumberTable->getTableLen(); i++) {
+        LineNumberTable::Item *item = new LineNumberTable::Item;
+        *(lineNumberTable->table + i) = *item;
+        printf("\t\tlineNumberTable: name index:%d,attr len:%d, table len:%d\n",
+               lineNumberTable->getAttributeNameIndex(),
+               lineNumberTable->getAttributeLength(), lineNumberTable->getTableLen());
+        item->setStartPc(classRead->readByTwoByte());
+        item->setLineNumber(classRead->readByTwoByte());
+        printf("\t\t\t第%d个属性，start pc : %d,line numnber:%d\n", i, item->getStartPc(), item->getLineNumber());
+    }
+
+};
+
+void ClassFileParser::parseLocalVariableTable(ClassRead *classRead, CodeAttributeInfo *codeAttributeInfo, string attrName,
+                                         int nameIndex, InstanceKlass *klass) {
+    LocalVariableTable *localVariableTable = new LocalVariableTable;
+    (codeAttributeInfo->attributes)[attrName] = localVariableTable;
+    localVariableTable->setAttributeNameIndex(nameIndex);
+    localVariableTable->setAttributeLength(classRead->readByFourByte());
+    localVariableTable->setTableLen(classRead->readByTwoByte());
+    localVariableTable->table = new LocalVariableTable::Item[localVariableTable->getTableLen()];
+    if (localVariableTable->getTableLen() == 0) {
+        printf("table len =0\n");
+        return;
+    }
+    for (int i = 0; i < localVariableTable->getTableLen(); i++) {
+        LocalVariableTable::Item *item = new LocalVariableTable::Item;
+        *(localVariableTable->table + i) = *item;
+        item->setStartPc(classRead->readByTwoByte());
+        item->setLength(classRead->readByTwoByte());
+        item->setNameIndex(classRead->readByTwoByte());
+        item->setDescriptorIndex(classRead->readByTwoByte());
+        item->setIndex(classRead->readByTwoByte());
+        printf("\t\tLocalVariableTable:第%d个属性，start pc:%d,length:%d,name index:%d,descrip:%d,index:%d\n", i,
+               item->getStartPc(), item->getLength(),
+               item->getNameIndex(), item->getDescriptorIndex(), item->getIndex());
+    }
+
 };
