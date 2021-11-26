@@ -991,7 +991,7 @@ lineNumberTable: name index:12,attr len:6, table len:1
 
 * 解析"属性"
 
-  **本次commit :** 0a96cbf9fe2199bdb7cd19d55b29a7d4edcd39e7
+  **本次commit :** 4a6fbf0dda391153ea2eb8f706cff67bfb7655ba
 
 <br/>
 有个好消息，解析"属性"是.class文件解析的最后一章节。
