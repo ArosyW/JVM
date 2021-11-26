@@ -20,6 +20,8 @@ InstanceKlass *ClassFileParser::Parser(ClassRead *classRead) {
     parserFieldsInfo(classRead, klass);//根据数量解析字段
     parserMethodCount(classRead, klass);//解析方法数量
     parserMethodInfo(classRead, klass);//解析方法
+    parserAttributeCount(classRead, klass);//解析属性数量
+    parserAttribute(classRead, klass);//解析属性
     return klass;
 }
 
@@ -295,3 +297,36 @@ void ClassFileParser::parseLocalVariableTable(ClassRead *classRead, CodeAttribut
     }
 
 };
+
+void ClassFileParser::parserAttributeCount(ClassRead *classRead, InstanceKlass *klass) {
+    klass->setAttributeCount(classRead->readByTwoByte());//读取两个字节将属性数量存储在InstanceKlass中
+    printf("解析属性，数量%d\n", klass->getAttributeCount());
+};
+
+void ClassFileParser::parserAttribute(ClassRead *classRead, InstanceKlass *klass) {
+    for (int i = 0; i < klass->getAttributeCount(); i++) {
+        short nameIndex = classRead->readByTwoByte();
+        string attrName = klass->getConstantPool()->data[nameIndex];
+        if ("SourceFile" == attrName) {
+            printf("\tSourceFile\n");
+            parseSourceFile(classRead, klass, nameIndex, i);//解析SourceFile属性
+        } else {
+            printf("\t无法识别的属性:%X\n", attrName.c_str());
+        }
+    }
+};
+
+void ClassFileParser::parseSourceFile(ClassRead *classRead, InstanceKlass *klass, short nameIndex, short index) {
+    klass->setAttributeInfo(new AttributeInfo[klass->getAttributeCount()]);//初始化内存空间来存储属性
+    AttributeInfo *attributeInfo= klass->getAttributeInfo();
+    *(klass->getAttributeInfo() + index) = *attributeInfo;
+    attributeInfo->setAttributeNameIndex(nameIndex);//存储属性name的常量池索引
+    attributeInfo->setAttributeLength(classRead->readByFourByte());//存储属性长度length
+    attributeInfo->initContainer();
+    *(attributeInfo->getContainer()) = classRead->readByTwoByte();//存储文件名的常量池索引
+    printf("\t\t第%d个属性，%s:nameIndex:%d,length:%d,data:%d,(%s)\n", index, klass->getConstantPool()->data[nameIndex],
+           attributeInfo->getAttributeNameIndex(), attributeInfo->getAttributeLength(), *attributeInfo->getContainer(),
+           klass->getConstantPool()->data[*attributeInfo->getContainer()]);
+};
+
+

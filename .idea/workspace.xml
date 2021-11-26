@@ -12,20 +12,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="5bcc33db-55b5-4b9a-b47c-e1d54bcdc620" name="Default Changelist" comment="UPDATE README">
-      <change afterPath="$PROJECT_DIR$/inteoreter/BytecodeStream.cpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/inteoreter/BytecodeStream.h" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/oop/AttributeInfo.cpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/oop/AttributeInfo.h" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/oop/CodeAttributeInfo.cpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/oop/CodeAttributeInfo.h" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/oop/LineNumberTable.cpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/oop/LineNumberTable.h" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/oop/LocalVariableTable.cpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/oop/LocalVariableTable.h" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/oop/MethodInfo.cpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/oop/MethodInfo.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/classFile/ClassFileParser.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/classFile/ClassFileParser.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/classFile/ClassFileParser.h" beforeDir="false" afterPath="$PROJECT_DIR$/classFile/ClassFileParser.h" afterDir="false" />

@@ -115,3 +115,19 @@ MethodInfo *InstanceKlass::getMethodInfo() const {
 void InstanceKlass::setMethodInfo(MethodInfo *methodInfo) {
     InstanceKlass::methodInfo = methodInfo;
 }
+
+short InstanceKlass::getAttributeCount() const {
+    return attributeCount;
+}
+
+void InstanceKlass::setAttributeCount(short attributeCount) {
+    InstanceKlass::attributeCount = attributeCount;
+}
+
+AttributeInfo *InstanceKlass::getAttributeInfo() const {
+    return attributeInfo;
+}
+
+void InstanceKlass::setAttributeInfo(AttributeInfo *attributeInfo) {
+    InstanceKlass::attributeInfo = attributeInfo;
+}

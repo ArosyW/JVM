@@ -18,6 +18,7 @@
 ###### 0.5[初识字节码文件](#初识字节码文件)
 ###### 1.[字节码文件读取到内存](#字节码文件读取到内存)
 ###### 2.[解析内存中的字节码文件](#解析内存中的字节码文件)
+###### 3.[类加载器](#类加载器)
 ##### (二)字节码执行器
 ###### 1.字节码解释器 
 ###### 2.模版解释器 
@@ -847,7 +848,7 @@ int main() {
  | ----  | ----  | ----  | ----  | ----  |
  |    2字节 |  2字节 |  2字节 | 2字节 | *字节 |
 
-其中附加属性是用来修饰这个方法的一些额外的信息，例如方法一般包括一个成为Code的属性，是JVM提供的指令的集合，用来描述这个方法如何执行的，"指令"后面在执行器篇将会详细讲解，此处我们仅仅需要把它存储在InstanceKlass即可。
+其中附加属性是用来修饰这个方法的一些额外的信息，例如方法一般包括一个称为Code的属性，是JVM提供的指令的集合，用来描述这个方法如何执行的，"指令"后面在执行器篇将会详细讲解，此处我们仅仅需要把它存储在InstanceKlass即可。
 
 其他的附加属性过多，不列在这里了，可以查阅《Java虚拟机规范》4.7章节。
 
@@ -862,7 +863,7 @@ int main() {
 
 * 名字索引：Class常量池索引
 * 当前属性长度：当前属性即名为"Code"的属性，指明了这个属性此次占用多少字节。
-* 最大栈深度：方法在执行的时候会在栈中创建"栈帧"，也成为"操作数栈"，最大栈深度即指方法在执行时操作数栈中最大容纳的操作数的数量。
+* 最大栈深度：方法在执行的时候会在栈中创建"栈帧"，也称为"操作数栈"，最大栈深度即指方法在执行时操作数栈中最大容纳的操作数的数量。
 * 当前方法的局部变量表个数：方法中声明的局部变量的数量
 * Code（指令）长度length：当前方法的JVM指令的个数
 * 指令：当前方法的JVM指令
@@ -898,7 +899,7 @@ int main() {
 <br/>
 
 于是我们需要新建C++类来映射这些属性，以达到存储的目的：
-MethodInfo、CodeAttributeInfo、AttributeInfo、LineNumberTable、LineNumberTable、BytecodeStream。
+MethodInfo、CodeAttributeInfo、AttributeInfo、LineNumberTable、LocalVariableTable、BytecodeStream。
 
 新增方法parserMethodCount、parserMethod、parserLineNumberTable、parseLocalVariableTable分别用来解析方法数量、解析方法、解析LineNumberTable、解析LocalVariableTable。
 
@@ -987,4 +988,99 @@ lineNumberTable: name index:12,attr len:6, table len:1
 小总结：如果这对你来说过于陌生，你只需要知道我们把方法的JVM指令存起来了就可以跳过本部分了。另外.class的解析我们已经走了99%了。
 
 ---
+
+* 解析"属性"
+
+  **本次commit :** 0a96cbf9fe2199bdb7cd19d55b29a7d4edcd39e7
+
+<br/>
+有个好消息，解析"属性"是.class文件解析的最后一章节。
+
+此处的属性与我们在解析字段和方法时遇到的"附加属性"是相同的结构，由于属性的枚举数量过多，此处不给出了，详细的枚举解析可查阅《Java虚拟机规范》4.7章节。
+我们的Java类"HelloJVM"是包含一个称为"SourceFile"的属性。同LineNumberTable、LocalVariableTable一样，属于调试信息，不是运行时必须的，不必过于关注。
+按照下面给出的约定存储在InstanceKlass中就好。
+
+
+| 属性name的常量池索引  | 属性长度length  | 文件名的常量池索引 
+    | ----  | ----  | ----  
+   |  2字节 |  4字节 |  2字节 |
+
+于是我们在InstanceKlass中新增attributeCount属性数量、attributeInfo属性：
+```c++
+
+class InstanceKlass {
+    int magic; //魔数，CAFEBABE:用来校验是否是.class文件
+……
+    short attributeCount;
+    AttributeInfo *attributeInfo;
+}
+
+```
+在ClassFileParser中新增parserAttributeCount、parserAttribute方法用来解析属性数量和属性：
+
+```c++
+
+void ClassFileParser::parserAttributeCount(ClassRead *classRead, InstanceKlass *klass) {
+klass->setAttributeCount(classRead->readByTwoByte());//读取两个字节将属性数量存储在InstanceKlass中
+printf("解析属性，数量%d\n", klass->getAttributeCount());
+};
+
+void ClassFileParser::parserAttribute(ClassRead *classRead, InstanceKlass *klass) {
+for (int i = 0; i < klass->getAttributeCount(); i++) {
+short nameIndex = classRead->readByTwoByte();
+string attrName = klass->getConstantPool()->data[nameIndex];
+if ("SourceFile" == attrName) {
+printf("\tSourceFile\n");
+parseSourceFile(classRead, klass, nameIndex, i);//解析SourceFile属性
+} else {
+printf("\t无法识别的属性:%X\n", attrName.c_str());
+}
+}
+};
+
+void ClassFileParser::parseSourceFile(ClassRead *classRead, InstanceKlass *klass, short nameIndex, short index) {
+klass->setAttributeInfo(new AttributeInfo[klass->getAttributeCount()]);//初始化内存空间来存储属性
+AttributeInfo *attributeInfo= klass->getAttributeInfo();
+*(klass->getAttributeInfo() + index) = *attributeInfo;
+attributeInfo->setAttributeNameIndex(nameIndex);//存储属性name的常量池索引
+attributeInfo->setAttributeLength(classRead->readByFourByte());//存储属性长度length
+attributeInfo->initContainer();
+*(attributeInfo->getContainer()) = classRead->readByTwoByte();//存储文件名的常量池索引
+printf("\t\t第%d个属性，%s:nameIndex:%d,length:%d,data:%d,(%s)\n", index, klass->getConstantPool()->data[nameIndex],
+attributeInfo->getAttributeNameIndex(), attributeInfo->getAttributeLength(), *attributeInfo->getContainer(),
+klass->getConstantPool()->data[*attributeInfo->getContainer()]);
+};
+
+
+```
+<br/><br/>
+我们来做一个测试：
+
+```c++
+int main() {
+    ClassRead *classRead = ClassRead::readByPath("/Users/e/Documents/github/JDK/out/production/JDK/HelloJVM.class");//换成你自己的path
+    InstanceKlass *klass = ClassFileParser::Parser(classRead);
+    int attrIndex = klass->getAttributeInfo()->getAttributeNameIndex();
+    int length = klass->getAttributeInfo()->getAttributeLength();
+    short fileIndex = *(short *)(klass->getAttributeInfo()->getContainer());
+    printf("解析属性完成，属性名字：%s,长度：%d，文件名字：%s\n", klass->getConstantPool()->data[attrIndex],
+           length,
+           klass->getConstantPool()->data[fileIndex]);
+    return 0;
+}
+```
+<br/>
+
+输出：<br/>
+
+解析属性完成，属性名字：SourceFile,长度：2，文件名字：HelloJVM.java
+
+小总结：由于我们的Java类HelloJVM只有一个SourceFile属性，为了快速的实现我们的简陋的JVM，我们此处仅仅写了这一种属性的解析逻辑。
+再次指路，其他属性的结构请移步《Java虚拟机规范》4.7章节。
+
+
+---
+
+###### 类加载器
+
 

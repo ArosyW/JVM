@@ -27,9 +27,11 @@ public:
     static void parserFieldsInfo(ClassRead *classRead, InstanceKlass *klass);//解析字段
     static void parserMethodCount(ClassRead *classRead, InstanceKlass *klass);//解析方法数量
     static void parserMethodInfo(ClassRead *classRead, InstanceKlass *klass);//解析方法
-    static void parserLineNumberTable(ClassRead *classRead, CodeAttributeInfo* codeAttributeInfo, string attrName, int nameIndex, InstanceKlass *klass);
-    static void parseLocalVariableTable(ClassRead *classRead, CodeAttributeInfo* codeAttributeInfo, string attrName, int nameIndex, InstanceKlass *klass);
-
+    static void parserAttributeCount(ClassRead *classRead, InstanceKlass *klass);//解析属性数量
+    static void parserAttribute(ClassRead *classRead, InstanceKlass *klass);//解析属性
+    static void parseSourceFile(ClassRead *classRead, InstanceKlass *klass, short nameIndex, short index);//解析"SourceFile"属性
+    static void parserLineNumberTable(ClassRead *classRead, CodeAttributeInfo* codeAttributeInfo, string attrName, int nameIndex, InstanceKlass *klass);//解析"LineNumberTable"属性
+    static void parseLocalVariableTable(ClassRead *classRead, CodeAttributeInfo* codeAttributeInfo, string attrName, int nameIndex, InstanceKlass *klass);//解析"LocalVariableTable"属性
 
 };
 
