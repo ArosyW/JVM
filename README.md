@@ -42,6 +42,9 @@ PS：每一章节都会进行单元测试，为了简洁，文章部分地方可
 ---
 
 ###### 一切的开始:
+
+---
+
 <br/>
    
      首先用你的IDEA，新建一个javaClass，输出 “Hello JVM”，并将其运行，相信这对于聪明的你易如反掌，就犹如探囊取物。
@@ -74,6 +77,9 @@ vim /Users/e/Documents/github/JDK/out/production/JDK/HelloJVM.class
 ---
 
 ###### 初识字节码文件:
+
+---
+
 <br/>
 <br/>
 既然我们自定义的HelloJVM类最终被编译成了这个16进制文件，并被Java虚拟机读取解析执行，那一定要满足两个最基本的条件：
@@ -98,6 +104,9 @@ vim /Users/e/Documents/github/JDK/out/production/JDK/HelloJVM.class
 ---
 
 ###### 字节码文件读取到内存
+
+---
+
    **本次commit :** b898c3ba733fb44c06fec6b0928cd9a173f5cd0f 
    * 读到内存
    新建 ClassRead.h && ClassRead.cpp 
@@ -135,6 +144,9 @@ int main() {
 ---
 
 ###### 解析内存中的字节码文件
+
+---
+
 
 * 解析“魔数”
 
@@ -1083,4 +1095,64 @@ int main() {
 
 ###### 类加载器
 
+---
+* 新增类加载器
+  
+  **本次commit :** 4a6fbf0dda391153ea2eb8f706cff67bfb7655ba
 
+<br/>
+在前文中我们实现了.class文件的解析，但一个类的加载不仅仅有.class文件的解析，后续我们来会有其他操作，例如执行<clinit>方法，因此我们继续对ClassFileParser进行封装，直到一个Java类能够真正的被初始化完成，然后才能对外使用。
+于是我们新建BootClassLoader:
+```c++
+class BootClassLoader {
+public:
+    static string prePath;//路径前缀 ：项目地址
+    static map<string, InstanceKlass *> allClass;//所有加载完成可以使用的Java类
+    static InstanceKlass* loadKlass(string& path);//根据路径（全限定名）加载Java类
+};
+```
+用loadKlass方法加载Java类，用allClass存储所有被加载完成的Java类：
+```c++
+InstanceKlass *BootClassLoader::loadKlass(string &p) {
+    string path = p.append(".class");
+    string tempPath = prePath;
+    InstanceKlass *klass = ClassFileParser::Parser(ClassRead::readByPath(tempPath.append(path)));
+    allClass[p] = klass;
+    return klass;
+}
+```
+
+为了避免重复加载，我们在方法的开始加一个逻辑，先通过allClass判断这个类是否已经加载过了：
+```c++
+InstanceKlass *BootClassLoader::loadKlass(string &p) {
+    if (allClass[p] != 0 ) {//先判断此类是否加载过
+        return allClass[p];
+    }
+    string path = p.append(".class");
+    string tempPath = prePath;
+    InstanceKlass *klass = ClassFileParser::Parser(ClassRead::readByPath(tempPath.append(path)));//读取.class到内存，然后解析它
+    allClass[p] = klass;//将解析完的klass存起来
+    return klass;
+}
+```
+即使这样，我们的loadKlass仍然是不完善的，在后面的章节我们会对它进行加锁以及介绍并执行<clinit>方法。
+
+<br/>
+我们来做一个测试：
+
+```c++
+int main() {
+    string path = "HelloJVM";
+    InstanceKlass *klass = BootClassLoader::loadKlass(path);
+    int index = *klass->getConstantPool()->data[klass->getThisClass()];//获取该类的类名索引
+    printf("%s\n", klass->getConstantPool()->data[index]);//取出类名
+    return 0;
+}
+```
+<br/>
+
+输出：<br/>
+
+HelloJVM
+
+小总结：为了后面完整的加载Java类，我们新增了类加载器，并用map将加载完成的类存起来，当然为了更快的实现这个简陋的JVM，我们不再考虑双亲委派等加载实现。

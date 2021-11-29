@@ -1,15 +1,12 @@
 #include "Stream/ClassRead.h"
 #include "classFile/ClassFileParser.h"
 #include "oop/InstanceKlass.h"
+#include "classFile/BootClassLoader.h"
 
 int main() {
-    ClassRead *classRead = ClassRead::readByPath("/Users/e/Documents/github/JDK/out/production/JDK/HelloJVM.class");//换成你自己的path
-    InstanceKlass *klass = ClassFileParser::Parser(classRead);
-    int attrIndex = klass->getAttributeInfo()->getAttributeNameIndex();
-    int length = klass->getAttributeInfo()->getAttributeLength();
-    short fileIndex = *(short *)(klass->getAttributeInfo()->getContainer());
-    printf("解析属性完成，属性名字：%s,长度：%d，文件名字：%s\n", klass->getConstantPool()->data[attrIndex],
-           length,
-           klass->getConstantPool()->data[fileIndex]);
+    string path = "HelloJVM";
+    InstanceKlass *klass = BootClassLoader::loadKlass(path);
+    int index = *klass->getConstantPool()->data[klass->getThisClass()];//获取该类的类名索引
+    printf("%s\n", klass->getConstantPool()->data[index]);//取出类名
     return 0;
 }
