@@ -1098,7 +1098,7 @@ int main() {
 ---
 * 新增类加载器
   
-  **本次commit :** 4a6fbf0dda391153ea2eb8f706cff67bfb7655ba
+  **本次commit :** e6906988a7e5e1b89c6197d2acefb7c623a726d8
 
 <br/>
 在前文中我们实现了.class文件的解析，但一个类的加载不仅仅有.class文件的解析，后续我们来会有其他操作，例如执行<clinit>方法，因此我们继续对ClassFileParser进行封装，直到一个Java类能够真正的被初始化完成，然后才能对外使用。
