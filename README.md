@@ -892,7 +892,7 @@ int main() {
 
       | start_pc  | 行号  | 
     | ----  | ----  | 
-  |    2字节 |  2字节 |  
+    |    2字节 |  2字节 |  
 
   * LocalVariableTable：
   
@@ -1012,10 +1012,9 @@ lineNumberTable: name index:12,attr len:6, table len:1
 我们的Java类"HelloJVM"是包含一个称为"SourceFile"的属性。同LineNumberTable、LocalVariableTable一样，属于调试信息，不是运行时必须的，不必过于关注。
 按照下面给出的约定存储在InstanceKlass中就好。
 
-
-| 属性name的常量池索引  | 属性长度length  | 文件名的常量池索引 
-    | ----  | ----  | ----  
-   |  2字节 |  4字节 |  2字节 |
+|  属性name的常量池索引  | 属性长度length   | 文件名的常量池索引  | 
+|  ----   |  ----   | ----   | 
+|  2字节  |  4字节  |   2字节  | 
 
 于是我们在InstanceKlass中新增attributeCount属性数量、attributeInfo属性：
 ```c++
@@ -1103,6 +1102,7 @@ int main() {
 <br/>
 在前文中我们实现了.class文件的解析，但一个类的加载不仅仅有.class文件的解析，后续我们来会有其他操作，例如执行<clinit>方法，因此我们继续对ClassFileParser进行封装，直到一个Java类能够真正的被初始化完成，然后才能对外使用。
 于是我们新建BootClassLoader:
+ 
 ```c++
 class BootClassLoader {
 public:
@@ -1111,7 +1111,9 @@ public:
     static InstanceKlass* loadKlass(string& path);//根据路径（全限定名）加载Java类
 };
 ```
+ 
 用loadKlass方法加载Java类，用allClass存储所有被加载完成的Java类：
+ 
 ```c++
 InstanceKlass *BootClassLoader::loadKlass(string &p) {
     string path = p.append(".class");
@@ -1123,6 +1125,7 @@ InstanceKlass *BootClassLoader::loadKlass(string &p) {
 ```
 
 为了避免重复加载，我们在方法的开始加一个逻辑，先通过allClass判断这个类是否已经加载过了：
+ 
 ```c++
 InstanceKlass *BootClassLoader::loadKlass(string &p) {
     if (allClass[p] != 0 ) {//先判断此类是否加载过
@@ -1135,6 +1138,7 @@ InstanceKlass *BootClassLoader::loadKlass(string &p) {
     return klass;
 }
 ```
+ 
 即使这样，我们的loadKlass仍然是不完善的，在后面的章节我们会对它进行加锁以及介绍并执行<clinit>方法。
 
 <br/>
