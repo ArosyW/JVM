@@ -4,13 +4,13 @@
 
 本项目将尝试性的一步一步实现jvm的主线内容，并对每一次代码的提交进行讲解，每一次讲解都尽可能的假设你一无所知。考虑到来此学习的大部分是Java程序员，所以本项目的C++代码将充满着Java的味道。
 
- * 适合人群：面向java虚拟机的初学者、想要自实现jvm的学习者。
- 如果想自己动手，那么你需要有一定的C\C++基础（可以理解指针即可）。如果仅仅是学习，那么相信强大的你不需要学过C\C++也能看懂。
- 
- * 参考资料：《Java虚拟机规范》
- 
+* 适合人群：面向java虚拟机的初学者、想要自实现jvm的学习者。
+  如果想自己动手，那么你需要有一定的C\C++基础（可以理解指针即可）。如果仅仅是学习，那么相信强大的你不需要学过C\C++也能看懂。
+
+* 参考资料：《Java虚拟机规范》
+
 ---
-   
+
 ## 二、目录（不定时更新……）
 
 ### (一)类加载模块
@@ -31,9 +31,11 @@
 ### (二)字节码执行器
 #### 1.[cpu是如何执行指令的](#cpu是如何执行指令的)
 #### 2.[cpu是如何执行方法的](#cpu是如何执行方法的)
-#### 3.[JVM如何执行方法的](#JVM如何执行方法的)
-##### 3.1[初始字节码指令](#初始字节码指令)
-##### 3.2[方法执行理论](#方法执行理论)
+#### 3.[初始JVM执行器](#初始执行器)
+##### 3.1[JVM指令集](#JVM指令集)
+##### 3.2[参数/返回值的传递](#传递)
+##### 3.3[执行器概念](#执行器概念)
+##### 3.4[方法执行理论示例](#方法执行理论示例)
 #### 4.字节码解释器
 #### 5.模版解释器 
 ### (三)内存池
@@ -1277,39 +1279,182 @@ func:
 <br/><br/>
 <img src="https://github.com/ArosyW/picture/blob/master/func.png" width = "600" height = "500" />
 <br/><br/>
-可以看出rbp寄存器 与 rsp寄存器 始终是指向栈底与栈顶的，而且调用者与被调用者的栈之间隔着16个字节的内存地址用于存放调用者的下一条指令，那么其实被调用者的栈底地址加16字节就是调用者的栈顶地址，这样
-就很容易得到被调用者栈内的任何数据了，这也是为什么能够使用栈内存来进行参数\返回值传递的原因。
+可以看出rbp寄存器 与 rsp寄存器 始终是指向栈底与栈顶的（而栈，本质就是一块连续的内存，同两个寄存器分别存储了它的首地址和尾地址，这样就模拟出了栈顶和栈底）。调用者与被调用者的栈之间隔着16个字节的内存地址用于存放调用者的下一条指令、调用者的栈底（恢复调用者用的，暂不需要关注），那么其实被调用者的栈底地址加16字节就是调用者的栈顶地址，这样
+就很容易得到被调用者栈内的任何数据了，这也是为什么能够使用栈内存来进行参数\返回值传递的原因，当然此时我们没有用到栈来传递参数，因为我们的参数足够少，寄存器够用。在模版解释器（超链接）章节，将会详细讲述cpu的方法调用。
 <br/> <br/> 
 当func方法执行完成后，rbp寄存器 与 rsp寄存器会重新指向main方法的栈底与栈顶。
 <br/> <br/>
 小总结：**计算机执行方法的方式就是通过跳转指令，然后通过寄存器与栈内存进行参数与返回值的传递。而指令的格式则是：操作码+（多个）操作数**。为实现我们简陋的JVM，理解到这一句话就足够了。如果想要看更详细的cpu执行指令、方法流程的，不巧，鄙人也给你准备了，点这<a href="#cpu如何执行指令与方法">`cpu如何执行指令与方法`</a>
  <br/>
 
-  **<p id="JVM如何执行方法的">3.JVM如何执行方法的：</p>**
+  **<p id="初始执行器">3.初始JVM执行器：</p>**
 
-**<p id="初始字节码指令">3.1 初始字节码指令：</p>**
+  JVM全称Java虚拟机，所谓虚拟机，即是虚拟的计算机，再换句话说，它模拟了计算机执行指令的过程。
 
-JVM全称Java虚拟机，所谓虚拟机，即是虚拟的计算机，再换句话说，它模拟了计算机执行指令的过程。
+**<p id="JVM指令集">3.1 JVM指令集：</p>**
 
-  * JVM指令集：
 
-既然是模拟了真实的计算机，那么它必然有自己的指令集，类似于cpu所能执行的 **操作码+（多个）操作数** 形式的指令，JVM也定义了自己的指令集，但是cpu能够执行指令是因为这是焊死在硬件里的，通过"译码器"可以识别。而JVM自己自定义的指令值是不能被cpu所能识别的，因此JVM需要
-自己实现逻辑去解释这些指令到底是啥意思，最终还是会被编译成cpu所能指别的指令集才能被cpu正确执行。
+* 既然是模拟了真实的计算机，那么它必然定义了自己的指令集。<br/><br/>
+* 与cpu指令集类似，JVM指令也是 **操作码+操作数** 形式。<br/><br/>
+* 但是cpu能够执行指令是因为这是焊死在硬件里的，通过"译码器"可以识别，而JVM自己自定义的指令集是不能被cpu所能识别的。<br/><br/>
+* 因此JVM需要自己实现逻辑去解释这些指令到底是啥意思。<br/><br/>
+* 最终还是会被编译成cpu所能识别的指令集才能被cpu正确执行。<br/><br/>
+* 并且，每个指令占用字节数也是有约定的。（撸代码时会详细讲述这种约定）
 
-  * 参数/返回值的传递：
+**<p id="传递">3.2 参数/返回值的传递：</p>**
   
 在前文我们看到cpu执行指令与方法，无论是参数的传递还是局部变量的存储，无非就是在寄存器与栈内存之间跳来跳去，可以说**真实的计算机的指令集是基于寄存器&&栈的**。而JVM既然是虚拟的计算机，那它也必然需要实现参数的传递，才能实现方法的调用，才能像真实的计算机一样去执行方法。
 有一点不同，**JVM的指令是基于栈**，它的指令实现只涉及对栈的操作。
 
+**<p id="执行器概念">3.3 执行器概念：</p>**
+
   * 举一个凶猛的栗子🌰：<br/><br/>
     ACONST_NULL  1
     <br/><br/>
-  这条指令的意思是将NULL推向栈顶。ACONST_NULL 这个单词只是帮助我们记忆的助记符，真实值是 1 ，当执行引擎读取到1的时候就会执行将"NULL推向栈顶"的逻辑。后面**章节会再详细介绍字节码指令。
+  这是一条JVM指令，它的意思是将NULL推向栈顶。ACONST_NULL 这个单词只是帮助我们记忆的助记符，真实值是 1 ，当JVM执行引擎读取到1的时候就会执行将"NULL推向栈顶"的逻辑，而这段逻辑的实现就需要JVM自己去实现，比如
+可以用c++实现，下面是一段伪代码：
+```c++
 
-**<p id="方法执行理论">3.2 方法执行理论：</p>**
+void run() {
+    stack.push(NULL);
+}
 
+```
 
+编译后：
+```c++
 
+pushq  %rbp
+movq   %rsp, %rbp
+subq   $0x10, %rsp
+movl   $0x0, -0x4(%rbp)
+leaq   0x1694a(%rip), %rdi
+leaq   -0x4(%rbp), %rsi
+callq  push
+addq   $0x10, %rsp
+popq   %rbp
+retq
+
+```
+
+不需要看懂，你只需要知道它有好多行就可以了。
+
+这其中调用的"push"方法的实现的编译后的汇编，我们还没有贴出来，而机器语言的入栈只需要一条指令"movl   $0x0, -0x4(%rbp)" 即可完成。
+显然相比于机器语言的入栈操作，用高级语言（c++）实现的入栈的指令的数量是巨大的，这必然是会影响效率的。不过，用c++来解释JVM指令的操作正是Hotspot早期采用的方式，就是我们即将要实现的**字节码解释器**。
+
+为了解决执行效率这个问题，Hotspot在后来的版本中采用了**模版解释器**，用动态生成机器指令的方式来解释JVM指令，即在JVM启动时，为每个JVM指令生成一段固定的机器码，取了个很吊的名字叫作"模版"，每当需要执行这条JVM指令时，
+就执行这段机器码，而这段机器码的数量是远远小于用c++解析JVM指令所编译出来的机器码的数量的。
+
+本质就是减少机器码的数量，那么执行效率就提高了。减少前叫作"字节码解释器"，减少后叫作"模版解释器"。而减少的手段，在模版解释器（此处暂时缺少超链接）我们再讲。
+
+**<p id="方法执行理论示例">3.4 方法执行理论示例：</p>**
+<br/>
+举一个凶猛的栗子🌰,画点图解释一下方法调用的流程。先十分残忍地上一段代码：
+```c++
+
+public class HelloJVM {
+    public static void main(String[] args) {
+        TestClass t = new TestClass();
+        int res = t.get(1, 2);
+    }
+}
+
+public class TestClass {
+    public int get(int a, int b) {
+        return a + b;
+    }
+}
+
+```
+这段代码如果看不懂就自己把自己的腿打断。<br/>
+<br/>
+下面从理论层面上说一下它是如何执行的。
+* 首先每一条线程都会有自己私有的一个栈空间stack，我们用下面这个黑色的矩形表示：
+<br/><br/>
+  <img src="https://github.com/ArosyW/picture/blob/master/ThreadStack.png" width = "250" height = "300" />
+
+(好像麻将的白板)
+<br/>
+* 每当这个线程执行一个方法时就会占用一块栈内存空间，这块内存空间被取了一个很吊的名字："栈帧"
+* 其实就是 new 一个栈帧，然后stack.push进去。
+* 一个栈帧，首先可以作为一个小的栈使用，即可以push,pop
+* 同时，还拥有一个用来存储局部变量的list。
+* 我们的main方法有三个局部变量：args,t,res。所以list长度为 3:
+* 好了，进入main方法了，于是我们的图变成了这个样子：
+  <img src="https://github.com/ArosyW/picture/blob/master/mainStack.png" width = "600" height = "500" />
+* 首先"new TestClass()"会创建TestClass对象（假如创建出的对象叫作oop）并且将其push入栈。
+<img src="https://github.com/ArosyW/picture/blob/master/mainoop.png" width = "600" height = "500" />
+  
+* 将栈顶oop复制一份再次入栈。
+
+* 于是我们的图变成了这个样子：
+<br/><br/>
+  <img src="https://github.com/ArosyW/picture/blob/master/mainoop2.png" width = "600" height = "500" />
+<br/><br/>
+* 然后将对象oop从栈中弹出一个，并赋值给list索引为1处，即list[1] = oop：
+<br/><br/>
+  <img src="https://github.com/ArosyW/picture/blob/master/mainpop1.png" width = "600" height = "500" />
+<br/><br/>
+接下来就是调用get(int a, int b)方法了，先解释一下为什么刚才oop在栈顶的时候被复制了一份，因为调用**非静态方法**的第一个参数默认是"调用者"，这个参数被称为this指针，不需要你写，但编译器会给你生成。在栈顶复制一份是为了后面调用
+get(int a, int b)用的，t.get(1, 2)可以理解为t.get(t,1, 2)。调用**静态方法**则不会有this指针这个参数。
+<br/><br/>
+* 在调用get(int a, int b)之前先把需要传递的参数依次push入栈，先是参数a即1入栈：
+<br/><br/>
+  <img src="https://github.com/ArosyW/picture/blob/master/mainpush1.png" width = "600" height = "500" />
+<br/><br/>
+* 然后将参数b即2入栈：
+<br/><br/>
+  <img src="https://github.com/ArosyW/picture/blob/master/mainpush2.png" width = "600" height = "500" />
+<br/><br/>
+* 然后会生成 "被调用方法get" 的栈帧：
+<br/><br/>
+  <img src="https://github.com/ArosyW/picture/blob/master/getinit.png" width = "600" height = "500" />
+<br/><br/>
+* 并把参数写入到"被调用者"的局部变量表list，将 2 从main栈中弹出，写入get方法的局部变量表：
+<br/><br/>
+  <img src="https://github.com/ArosyW/picture/blob/master/getcan1.png" width = "600" height = "500" />
+<br/><br/>
+* 将 1 从main栈中弹出，写入get方法的局部变量表：
+<br/><br/>
+  <img src="https://github.com/ArosyW/picture/blob/master/getcan2.png" width = "600" height = "500" />
+<br/><br/>
+* 将 this指针：oop 从main栈中弹出，写入get方法的局部变量表：
+<br/><br/>
+  <img src="https://github.com/ArosyW/picture/blob/master/getcan3.png" width = "600" height = "500" />
+<br/><br/>
+
+**到这之后，才真正的来到get(int a, int b)，之前都是在main方法完成的。**
+
+<br/><br/>
+* get方法中需要作加法，先把加法运算的两个参数依次push入栈：
+<br/><br/>
+  <img src="https://github.com/ArosyW/picture/blob/master/getpushone.png" width = "600" height = "500" />
+<br/><br/>
+  <img src="https://github.com/ArosyW/picture/blob/master/getpushtwo.png" width = "600" height = "500" />
+<br/><br/>
+* 将get栈弹出两个元素，作加法运算，然后将结果push进get栈:
+<br/><br/>
+  <img src="https://github.com/ArosyW/picture/blob/master/getadd.png" width = "600" height = "500" />
+<br/><br/>
+* 最后该执行return了，将get栈中的3弹出，push进main方法的栈中，然后get方法到这就结束了，释放get方法的栈帧内存：
+<br/><br/>
+  <img src="https://github.com/ArosyW/picture/blob/master/getreturn.png" width = "600" height = "500" />
+<br/><br/>
+
+**后面就是main方法在调用完get方法后的执行流程了，看下如何取出get方法的返回值的。**
+
+<br/><br/>
+将main栈弹出3，赋值给main的局部变量表：
+<br/><br/>
+<img src="https://github.com/ArosyW/picture/blob/master/maincan3.png" width = "600" height = "500" />
+
+<br/><br/>
+糊hu了！
+<br/><br/>
+成功完成了方法的调用与返回！
+<br/><br/>
+来个很diao的总结：方法调用过程中，参数的传递是**靠调用者将参数写入被调用者的局部变量**表实现的，而返回值的传递是**靠被调用者将返回值push进调用者栈**实现的。如果你仍有疑惑这些逻辑如何通过代码实现，下一章节就是。
+<br/><br/>
 ### (六)扩展内容
  
 **<a id="cpu如何执行指令与方法">1.cpu如何执行指令与方法：</a>**
