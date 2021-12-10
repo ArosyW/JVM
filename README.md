@@ -9,6 +9,8 @@
 
 * 参考资料：《Java虚拟机规范》
 
+* 本系列中的"模版解释器"部分受《揭秘Java虚拟机》 作者：封亚飞 的启发、影响是巨大的，特意贴出，以示尊敬
+
 ---
 
 ## 二、目录（不定时更新……）
@@ -28,7 +30,7 @@
 ##### 2.8[解析“方法”](#方法)
 ##### 2.9[解析“属性”](#属性)
 #### 3.[类加载器](#类加载器)
-### (二)字节码执行器
+### (二)执行引擎
 #### 1.[cpu是如何执行指令的](#cpu是如何执行指令的)
 #### 2.[cpu是如何执行方法的](#cpu是如何执行方法的)
 #### 3.[初始JVM执行器](#初始执行器)
@@ -1184,7 +1186,6 @@ HelloJVM
 ---
 
 Java方法的执行就是字节码执行器执行指令的过程。有必要先讲一下cpu是如何执行指令的。
- >PS：为什么需要讲一下cpu是如何执行的，此段启发自《揭秘Java虚拟机》 作者：封亚飞，特意贴出，以示尊敬。这本书里面讲的过于细致了，我担心你看得丧失信心。所以此处用我自己的逻辑简写一段。
 
 <br/><br/>
  **<p id="cpu是如何执行指令的">1.cpu是如何执行指令的：</p>**
@@ -1207,84 +1208,350 @@ Java方法的执行就是字节码执行器执行指令的过程。有必要先�
  **<p id="cpu是如何执行方法的">2.cpu是如何执行方法的：</p>**
  
  ---
+>温柔的提示：假如这一章节你不感兴趣或者看不懂，没关系，这节课可以逃掉，直接看**总结**，不影响手写后面的**字节码解释器**，也不影响你开劳斯莱斯，但当我们手写到**模版解释器**的时候，你不得不将这一章节彻底整明白。
 
-**而所谓的方法，就是多个指令的集合，且在一段连续的内存空间内**，在上一段cpu执行完一条指令时，会继续往下读取下一条指令，当译码器无法匹配到合法的指令时将会发生异常。既然所有的方法都会被编译成机器码在一段连续的内存空间中存放着，那么想要执行这个方法，只需要让cpu跳转到这段内存空间的首地址即可，那就需要一个能实现跳转的指令：jmp，它是无条件跳转指令。
+
+**而所谓的方法，就是多个指令的集合，且在一段连续的内存空间内**，在上文中，cpu执行完一条指令时，会继续往下读取下一条指令，当译码器无法匹配到合法的指令时将会发生异常。既然所有的方法都会被编译成机器码在一段连续的内存空间中存放着，那么想要执行这个方法，只需要让cpu跳转到这段内存空间的首地址即可，那就需要一个能实现跳转的指令：jmp，它是无条件跳转指令。
 <br/><br/>
 但它自己并不能完成方法的调用，因为它无法"返回"调用者继续执行调用者的代码。因此我们需要的是:call指令配合ret指令，它可以保存调用者的下一条指令，当执行ret完时自动执行调用者的下一条指令。
 <br/><br/>
 还有一个问题没有解决，就是参数与返回值如何传递。来一段代码：
 
 ```c++
+
+int func(int arg, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7) {
+    return arg + arg1 + arg2 + arg3 + arg4 + arg5 + arg6 + arg7;
+}
 int main() {
-    func(2);   
+    func(1, 2, 3, 4, 5, 6, 7, 8);
     return 0;
 }
-int func(int arg){
-    return arg;
-}
+
 ```
 
 编译后：
 
 ```c++
 main: 
- pushq  %rbp  //保存调用者栈基地址
- movq   %rsp, %rbp //保存调用者栈基地址
- subq   $0x10, %rsp //为当前方法分配16个字节栈空间 
- movl   $0x0, -0x4(%rbp) // 将0存入到 rbp寄存器往下四个字节的位置
- movl   $0x2, %edi //将 2 存入edi寄存器
- callq  func //存储下一条指令（xorl） 然后 调用 func方法
+ pushq  %rbp //保存调用者栈底地址（8个字节），即将它入栈
+ movq   %rsp, %rbp // 将rsp寄存器存储的值 赋值 给 rbp寄存器
+ subq   $0x20, %rsp // 将rsp寄存器所指向的内存空间向下移动32个字节，就是分配32字节的内存
+ movl   $0x0, -0x4(%rbp) // 将0赋值给rbp寄存器往下4个字节的位置
+ movl   $0x1, %edi //将1 赋值给edi寄存器
+ movl   $0x2, %esi // 将 2 赋值给esi寄存器
+ movl   $0x3, %edx // 将 3 赋值给edx寄存器
+ movl   $0x4, %ecx //将 4 赋值给ecx寄存器
+ movl   $0x5, %r8d //将 5 赋值给r8d寄存器
+ movl   $0x6, %r9d //将 6 赋值给 r9d寄存器
+ movl   $0x7, (%rsp) // 将 7 赋值给rsp寄存器所指向的内存
+ movl   $0x8, 0x8(%rsp) // 将 8 赋值给rsp寄存器所指向的内存 往上8个字节的位置
+ callq  func // 调用 func函数
  xorl   %ecx, %ecx
- movl   %eax, -0x8(%rbp) //将eax寄存器中的值赋值给rbp往下8个字节的位置
+ movl   %eax, -0x8(%rbp) // 将eax寄存器的值赋值给rbp寄存器往下8个字节的位置
  movl   %ecx, %eax
- addq   $0x10, %rsp
- popq   %rbp
+ addq   $0x20, %rsp //将rps寄存器所存的内存地址往上32个字节
+ popq   %rbp // 弹出栈中内容，赋值给rbp寄存器。并将rsp往上移动8个字节
+ retq   // 弹出栈中内容，赋值给ip寄存器，cpu跳转执行
 
 func:
- pushq  %rbp //保存调用者栈基地址
- movq   %rsp, %rbp //保存调用者栈基地址
- movl   %edi, -0x4(%rbp) //将edi寄存器的值存入到 rbp寄存器往下四个字节的位置
- movl   -0x4(%rbp), %eax //rbp寄存器往下四个字节的位置 存入到 eax寄存器
- popq   %rbp 
- retq  
+ pushq  %rbp //保存调用者栈底地址（8个字节），即将它入栈
+ movq   %rsp, %rbp // 将rsp寄存器存储的值 赋值 给 rbp寄存器
+ movl   0x18(%rbp), %eax // 将rbp寄存器所指向的内存 往上24个字节的位置的值 赋值给eax寄存器
+ movl   0x10(%rbp), %r10d // 将rbp寄存器所指向的内存 往上16个字节的位置的值 赋值给r10d寄存器
+ movl   %edi, -0x4(%rbp) // 将 edi寄存器的值赋值给 rbp寄存器所指向的内存 往下4个字节的位置的值
+ movl   %esi, -0x8(%rbp) // 将 esi寄存器的值赋值给 rbp寄存器所指向的内存 往下8个字节的位置的值
+ movl   %edx, -0xc(%rbp) // 将 edx寄存器的值赋值给 rbp寄存器所指向的内存 往下12个字节的位置的值
+ movl   %ecx, -0x10(%rbp) // 将 ecx寄存器的值赋值给 rbp寄存器所指向的内存 往下16个字节的位置的值
+ movl   %r8d, -0x14(%rbp) // 将 r8d寄存器的值赋值给 rbp寄存器所指向的内存 往下20个字节的位置的值
+ movl   %r9d, -0x18(%rbp) // 将 r9d寄存器的值赋值给 rbp寄存器所指向的内存 往下24个字节的位置的值
+ movl   -0x4(%rbp), %ecx // 将rbp寄存器所指向的内存 往下4个字节的位置的值 赋值给ecx寄存器
+ addl   -0x8(%rbp), %ecx // 将rbp寄存器所指向的内存 往下8个字节的位置的值 与 ecx寄存器 的值相加 然后赋值回ecx寄存器
+ addl   -0xc(%rbp), %ecx // 将rbp寄存器所指向的内存 往下12个字节的位置的值 与 ecx寄存器 的值相加 然后赋值回ecx寄存器
+ addl   -0x10(%rbp), %ecx // 将rbp寄存器所指向的内存 往下16个字节的位置的值 与 ecx寄存器 的值相加 然后赋值回ecx寄存器
+ addl   -0x14(%rbp), %ecx // 将rbp寄存器所指向的内存 往下20个字节的位置的值 与 ecx寄存器 的值相加 然后赋值回ecx寄存器
+ addl   -0x18(%rbp), %ecx // 将rbp寄存器所指向的内存 往下24个字节的位置的值 与 ecx寄存器 的值相加 然后赋值回ecx寄存器
+ addl   0x10(%rbp), %ecx // 将rbp寄存器所指向的内存 往上10个字节的位置的值 与 ecx寄存器 的值相加 然后赋值回ecx寄存器
+ addl   0x18(%rbp), %ecx // 将rbp寄存器所指向的内存 往上18个字节的位置的值 与 ecx寄存器 的值相加 然后赋值回ecx寄存器
+ movl   %eax, -0x1c(%rbp) // 将eax寄存器的值 赋值给 rbp寄存器所指向的内存 往下28个字节的位置的值
+ movl   %ecx, %eax // 将ecx寄存器中的值 赋值给 eax寄存器
+ popq   %rbp // 弹出栈中内容，赋值给rbp寄存器。并将rsp往上移动8个字节
+ retq   // 弹出栈中内容，赋值给ip寄存器，cpu跳转执行
 ```
 
-  * 参数传递过程：
-  
-     * 我们的参数是2。
-    
-     * 在main方法的第五条命令（movl   $0x2, %edi），将2 放入了edi寄存器。
-     
-     * 然后在func方法第三条命令（movl   %edi, -0x4(%rbp)）将edi寄存器中的数据取出放进了func方法自己的栈内存当中。
-     
-     * 显然计算机执行方法时参数的传递是通过寄存器中转实现的。
-     
-     * 但当一个方法参数足够多的时候，寄存器的数量显然是不够用的。此时可以使用栈内存来进行传递。
-
-    
-  * 返回值传递过程：
- 
-    * func方法第四条命令（movl   -0x4(%rbp), %eax），将rbp寄存器往下四个字节的位置的值赋给了eax寄存器。
-    而-0x4(%rbp)这个位置的值就是在func第三条指令中放入的，其实就是func方法的返回值。
-    
-    * 还可以看到在main方法当中第八条指令（movl   %eax, -0x8(%rbp)），将eax寄存器中的值赋值给了栈内存，这就是取出func方法返回值的过程，所以，返回值的传递也是通过寄存器中转实现的，如果返回值过多或不能使用寄存器时，也会使用栈内存就行传递。
-    
-
-
-执行main方法，还没执行func方法时的内存图：
+别怕，去重后一共也没几个指令，学废它！当然cpu最终执行的是0和1的机器码，这里用汇编语言表示，是为了我们理解。
 <br/><br/>
-<img src="https://github.com/ArosyW/picture/blob/master/main.png" width = "600" height = "500" />
+从main函数开始，前两条指令：
 
-执行func方法时的内存图：
+```
+
+pushq  %rbp 
+movq   %rsp, %rbp
+
+```
+在func函数开头也是这两条指令，它是为了恢复到调用者而设计的，到func函数我们在讲。
+
+到这你只需要知道：
+* rbp寄存器始终指向函数栈的栈底
+* rsp寄存器始终指向函数栈的栈顶
+
+>PS： 所谓的栈其实就是一块连续的内存空间，用两个寄存器分别指向它的首地址和尾地址。
+
+那么刚进入main函数执行完上面两条（pushq、movq）通用指令后我们的main函数图就是这个样子：
 <br/><br/>
-<img src="https://github.com/ArosyW/picture/blob/master/func.png" width = "600" height = "500" />
+<img src="https://github.com/ArosyW/picture/blob/master/maininit.png" width = "660" height = "500" />
 <br/><br/>
-可以看出rbp寄存器 与 rsp寄存器 始终是指向栈底与栈顶的（而栈，本质就是一块连续的内存，同两个寄存器分别存储了它的首地址和尾地址，这样就模拟出了栈顶和栈底）。调用者与被调用者的栈之间隔着16个字节的内存地址用于存放调用者的下一条指令、调用者的栈底（恢复调用者用的，暂不需要关注），那么其实被调用者的栈底地址加16字节就是调用者的栈顶地址，这样
-就很容易得到被调用者栈内的任何数据了，这也是为什么能够使用栈内存来进行参数\返回值传递的原因，当然此时我们没有用到栈来传递参数，因为我们的参数足够少，寄存器够用。在模版解释器（超链接）章节，将会详细讲述cpu的方法调用。
-<br/> <br/> 
-当func方法执行完成后，rbp寄存器 与 rsp寄存器会重新指向main方法的栈底与栈顶。
-<br/> <br/>
-小总结：**计算机执行方法的方式就是通过跳转指令，然后通过寄存器与栈内存进行参数与返回值的传递。而指令的格式则是：操作码+（多个）操作数**。为实现我们简陋的JVM，理解到这一句话就足够了。如果想要看更详细的cpu执行指令、方法流程的，不巧，鄙人也给你准备了，点这<a href="#cpu如何执行指令与方法">`cpu如何执行指令与方法`</a>
+红色的内容我们进入func方法再讲。
+<br/><br/>
+下一条指令，说人话就是栈顶（rsp寄存器）下移32个字节，栈的增长是向下的，因此这里就是为main函数分配了32个字节的栈空间：
+
+```
+
+subq   $0x20, %rsp
+
+```
+
+<br/><br/>
+<img src="https://github.com/ArosyW/picture/blob/master/mainsub.png" width = "600" height = "500" />
+<br/><br/>
+
+main函数第四条指令：
+
+```
+movl   $0x0, -0x4(%rbp)
+```
+
+将 0 赋值给 rbp寄存器指向的内存往下四个字节的位置（这个0其实就是我们main函数的返回值），于是我们的内存图变成了这个样子：
+<br/><br/>
+<img src="https://github.com/ArosyW/picture/blob/master/mainmov0.png" width = "600" height = "500" />
+<br/><br/>
+
+我们一共传递给func函数8个参数， 接下来6条指令就是将前6个参数存入寄存器：
+
+```
+movl   $0x1, %edi //将1 赋值给edi寄存器
+movl   $0x2, %esi // 将 2 赋值给esi寄存器
+movl   $0x3, %edx // 将 3 赋值给edx寄存器
+movl   $0x4, %ecx //将 4 赋值给ecx寄存器
+movl   $0x5, %r8d //将 5 赋值给r8d寄存器
+movl   $0x6, %r9d //将 6 赋值给 r9d寄存器
+```
+这样当执行进func函数的时候，func函数就可以直接从寄存器中取出前6个参数了，看下现在的内存图：
+<br/><br/>
+<img src="https://github.com/ArosyW/picture/blob/master/mainmov1-6.png" width = "600" height = "500" />
+<br/><br/>
+
+为什么只传递了6个参数？
+> 因为寄存器的不够用了，寄存器是十分稀缺的。这也是我为什么要传递8个参数，因为大于6个参数编译器才会用栈内存来传递剩余的参数。
+
+为什么不直接使用栈内存：
+> 因为寄存器更快，当然优先用快的方式传递参数。
+
+寄存器为什么快：
+> 1.在设计上寄存器离cpu更近。
+> 2.寄存器的制作工艺，硬件设计更优越。
+
+为什么内存不采用寄存器的工艺：
+>太贵！
+
+**当然，如果你手写汇编，你可以自由选择用、不用、用多少寄存器来传递参数，6个只是编译器编译c语言的限制。**
+
+<br/>
+继续我们的main函数，还有两个参数是通过栈内存传递的：
+<br/>
+
+```
+movl   $0x7, (%rsp) // 将 7 赋值给rsp寄存器所指向的内存
+movl   $0x8, 0x8(%rsp) // 将 8 赋值给rsp寄存器所指向的内存 往上8个字节的位置
+```
+
+将7、8存入main函数的栈内存中：
+
+<br/><br/>
+<img src="https://github.com/ArosyW/picture/blob/master/mainmov7-8.png" width = "600" height = "500" />
+<br/><br/>
+
+终于我们准备好了func函数需要的8个参数，于是
+
+```
+ callq  func // 调用 func函数
+```
+
+注意这条指令包含的内容是很丰富的，会先把main函数下一条指令也就是：xorl   %ecx, %ecx ，入栈,然后才会调用func函数。具体操作为把rsp寄存器存储的地址下移8个字节，并把xorl   %ecx, %ecx 存入这8个字节，看图：
+<br/><br/>
+<img src="https://github.com/ArosyW/picture/blob/master/mainfunccall.png" width = "600" height = "500" />
+<br/><br/>
+
+下面才进入func函数，一上来就是在main函数开头我们没讲的那两条指令：
+
+```
+
+pushq  %rbp 
+movq   %rsp, %rbp
+
+```
+因为每个函数的开头都是它，作用一样，所以就放在这里讲了：
+
+>它的用意在于将调用者（func的调用者为main）的栈底地址保存起来（入栈），因为执行当前方法（func）就需要将rbp、rsp指向当前方法（func）的栈底、栈顶。
+<br/><br/>
+>保存调用者（main）栈底地址，方便当前方法（func）执行完后能让rbp、rsp重新指向调用者（main）的栈底、栈顶。
+
+具体操作为，(pushq  %rbp) 将rbp寄存器中的值（main函数栈底）入栈：
+<br/><br/>
+<img src="https://github.com/ArosyW/picture/blob/master/mainfunpush.png" width = "600" height = "500" />
+<br/><br/>
+
+(movq   %rsp, %rbp)将rsp寄存器中的值赋值给rbp寄存器，那么现在rbp、rsp寄存器都指向func函数的栈底了：
+<br/><br/>
+<img src="https://github.com/ArosyW/picture/blob/master/mainfuncrbp.png" width = "600" height = "500" />
+<br/><br/>
+
+
+我们回头看main函数在执行完 " pushq  %rbp ；  movq  %rsp, %rbp " 这两条指令后执行了subq，也就是为当前方法分配栈内存，于是你会**愤怒地发现**（修饰动词用'土''也' DE）func函数竟然没有这一步，导致rsp、rbp寄存器
+在整个func函数往后的生命中都一直指向func栈底。
+<br/><br/>
+因为func函数没有再调用其他任何函数，这种情况下func函数有一个很吊的名字"叶子函数"，部分架构下，这种函数栈底往下128字节，叫作红色区域，默认可以使用，可以选择不分配，128字节不够用的时候还是必须分配的。
+<br/><br/>
+
+继续，func接下来八条指令，在做的事情只有一个，把8个参数从寄存器、main栈内存，复制到自己的栈内存中，或者寄存器中，用java的话来讲就是把参数存入到自己的局部变量表。
+先看前两条指令：
+
+```
+movl   0x18(%rbp), %eax // 将rbp寄存器所指向的内存 往上24个字节的位置的值 赋值给eax寄存器
+movl   0x10(%rbp), %r10d // 将rbp寄存器所指向的内存 往上16个字节的位置的值 赋值给r10d寄存器
+```
+我们回看一下内存图，rbp寄存器所指向的内存，往上24个字节和16个字节的位置，是啥？
+<br/><br/>
+<img src="https://github.com/ArosyW/picture/blob/master/mainfunc7-8.png" width = "600" height = "500" />
+<br/><br/>
+
+天呐，那不就是main函数因为寄存器不够用而把7、8两个参数入栈的位置嘛，惊掉你的下巴了吗，收一收，牙龈露出来了。
+<br/><br/>
+再来看下面六条指令：
+
+```
+ movl   %edi, -0x4(%rbp) // 将 edi寄存器的值赋值给 rbp寄存器所指向的内存 往下4个字节的位置的值
+ movl   %esi, -0x8(%rbp) // 将 esi寄存器的值赋值给 rbp寄存器所指向的内存 往下8个字节的位置的值
+ movl   %edx, -0xc(%rbp) // 将 edx寄存器的值赋值给 rbp寄存器所指向的内存 往下12个字节的位置的值
+ movl   %ecx, -0x10(%rbp) // 将 ecx寄存器的值赋值给 rbp寄存器所指向的内存 往下16个字节的位置的值
+ movl   %r8d, -0x14(%rbp) // 将 r8d寄存器的值赋值给 rbp寄存器所指向的内存 往下20个字节的位置的值
+ movl   %r9d, -0x18(%rbp) // 将 r9d寄存器的值赋值给 rbp寄存器所指向的内存 往下24个字节的位置的值
+```
+把这六个寄存器中的值赋值到func栈内存中，而这6个寄存器中的值就是main函数提前写入的1、2、3、4、5、6，于是我们的内存图变成了这个样子：
+<br/><br/>
+<img src="https://github.com/ArosyW/picture/blob/master/mainfunc1-6.png" width = "600" height = "500" />
+<br/><br/>
+
+到这func函数已经把它需要的所有参数复制了一份自己用，那6个存储参数的寄存器其实已经完成传递参数的使命了，因为其中的值已经被存到了内存中，那么6个寄存器可以继续用作它用了，
+比如接下来进行加法运算的8条指令，就用了ecx寄存器中转结果值：
+
+```
+movl   -0x4(%rbp), %ecx // 将rbp寄存器所指向的内存 往下4个字节的位置的值 赋值给ecx寄存器
+addl   -0x8(%rbp), %ecx // 将rbp寄存器所指向的内存 往下8个字节的位置的值 与 ecx寄存器 的值相加 然后赋值回ecx寄存器
+addl   -0xc(%rbp), %ecx // 将rbp寄存器所指向的内存 往下12个字节的位置的值 与 ecx寄存器 的值相加 然后赋值回ecx寄存器
+addl   -0x10(%rbp), %ecx // 将rbp寄存器所指向的内存 往下16个字节的位置的值 与 ecx寄存器 的值相加 然后赋值回ecx寄存器
+addl   -0x14(%rbp), %ecx // 将rbp寄存器所指向的内存 往下20个字节的位置的值 与 ecx寄存器 的值相加 然后赋值回ecx寄存器
+addl   -0x18(%rbp), %ecx // 将rbp寄存器所指向的内存 往下24个字节的位置的值 与 ecx寄存器 的值相加 然后赋值回ecx寄存器
+addl   0x10(%rbp), %ecx // 将rbp寄存器所指向的内存 往上10个字节的位置的值 与 ecx寄存器 的值相加 然后赋值回ecx寄存器
+addl   0x18(%rbp), %ecx // 将rbp寄存器所指向的内存 往上18个字节的位置的值 与 ecx寄存器 的值相加 然后赋值回ecx寄存器
+```
+
+其中第一条指令，"movl   -0x4(%rbp), %ecx" ，rbp寄存器所指向的内存 往下4个字节的位置的值是我们的参数：1，把它赋值给ecx寄存器：
+<br/><br/>
+<img src="https://github.com/ArosyW/picture/blob/master/mainfuncecx1.png" width = "600" height = "500" />
+<br/><br/>
+
+下面讲一条add指令（addl   -0x8(%rbp), %ecx），其余6条同理。
+
+首先-0x8(%rbp)，rbp寄存器指向的内存往下8个字节的位置的值，是 2 ：
+<br/><br/>
+<img src="https://github.com/ArosyW/picture/blob/master/mainfuncaddabout2.png" width = "600" height = "500" />
+<br/><br/>
+
+而此时ecx寄存器中的值是 1。
+
+-0x8(%rbp) =2 ，ecx =1 ，那么 （addl   -0x8(%rbp), %ecx） 的意思就是把1 、 2 相加，结果写入ecx寄存器，于是ecx寄存器中的值就是3了：
+<br/><br/>
+<img src="https://github.com/ArosyW/picture/blob/master/mainfuncecx3.png" width = "600" height = "500" />
+<br/><br/>
+
+下面6条add指令中的<br/><br/>
+ -0xc(%rbp) 、 -0x10(%rbp) 、 -0x14(%rbp) 、 -0x18(%rbp) 、 0x10(%rbp) 、 0x18(%rbp)
+<br/><br/>
+分别是3、4、5、6、7、8 。 那么就是把ecx寄存器中的值：3，加3、4、5、6、7、8，最后ecx寄存器的值为 36 ：
+<br/><br/>
+<img src="https://github.com/ArosyW/picture/blob/master/mainfuncecx36.png" width = "600" height = "500" />
+<br/><br/>
+
+终于，func函数还剩4条指令了，挺住，先来看两条：
+
+```
+movl   %eax, -0x1c(%rbp) // 将eax寄存器的值 赋值给 rbp寄存器所指向的内存 往下28个字节的位置的值
+movl   %ecx, %eax // 将ecx寄存器中的值 赋值给 eax寄存器
+```
+还记得eax寄存器中存的啥吗，参数 8 ，这是没有被存入func函数栈内存的，因为后面需要用eax寄存器来存储返回值，8会被覆盖掉，所以需要先存到栈中。
+<br/><br/>
+而ecx寄存器中存的是我们求和的最终结果，现在将它存入eax寄存器，看执行完这两条指令的图：
+<br/><br/>
+<img src="https://github.com/ArosyW/picture/blob/master/mainfunctoeax.png" width = "600" height = "500" />
+<br/><br/>
+
+func函数最后两条指令：
+```
+popq   %rbp // 弹出栈中内容，赋值给rbp寄存器。并将rsp往上移动8个字节
+retq   // 弹出栈中内容，赋值给ip寄存器，cpu跳转执行
+```
+就是为了将rsp、rbp寄存器恢复到main函数栈顶、栈底。
+<br/><br/>
+先看（popq   %rbp），将栈顶数据弹出，赋值给rbp寄存器，虽然我们的func函数使用了许多栈空间用来存储参数，但pop指令所认为的栈顶，始终是rsp寄存器所指向的位置，再贴张图看下栈顶位置是什么吧：
+<br/><br/>
+<img src="https://github.com/ArosyW/picture/blob/master/mainfuncpop.png" width = "600" height = "500" />
+<br/><br/>
+栈顶是main函数的栈底地址，将它赋值给rbp寄存器，这样rbp寄存器就重新指向main函数的栈底了。
+<br/><br/>
+既然是pop出数据，那么栈顶位置（rsp寄存器）也应该随之改变，即往上移动8个字节，看此时的图：
+<br/><br/>
+<img src="https://github.com/ArosyW/picture/blob/master/mainfuncpopover.png" width = "600" height = "500" />
+<br/><br/>
+
+func函数最后一条指令：
+<br/>
+
+```
+retq   // 弹出栈中内容，赋值给ip寄存器，cpu跳转执行
+```
+<br/>
+将栈顶位置弹出，此时rsp寄存器指向的数据即为栈顶数据，看图是：main函数下一条指令（xorl）(8字节)，将它赋值给cs:ip寄存器。<br/>
+>你可以认为cpu每次执行指令的地址都是从cs:ip寄存器中取的，只要改变cs:ip寄存器的值就能让cpu跳转到任何地方执行。
+<br/>
+当然，rsp寄存器也要像pop指令一样，上移8个字节，终于rsp寄存器重新指向了main函数的栈顶，看下此时的图：
+<br/><br/>
+<img src="https://github.com/ArosyW/picture/blob/master/mainfuncret.png" width = "600" height = "500" />
+<br/><br/>
+
+此时rsp、rbp寄存器都已经恢复到调用者（main函数）的栈顶、栈底。
+<br/><br/>
+main函数可以继续执行了，下面我们只看一下它是如何取出的返回值就ok了。
+<br/><br/>
+还记得我们的返回值在哪吗？忘了的看图，在eax寄存器，36 好好地存着呢。
+<br/><br/>
+再来看main函数倒数第五条指令：
+
+```
+movl   %eax, -0x8(%rbp) // 将eax寄存器的值赋值给rbp寄存器往下8个字节的位置
+```
+将eax寄存器中的值取出，存入了main的栈内存：
+<br/><br/>
+<img src="https://github.com/ArosyW/picture/blob/master/maingeteax.png" width = "600" height = "500" />
+<br/><br/>
+
+终于完成了方法的调用、返回、参数、返回值的流程，我先去寻找一会快乐，再回来写。
+
+
+小总结：**计算机执行方法的方式就是通过跳转指令，然后通过寄存器与栈内存进行参数与返回值的传递，调用者将参数存入寄存器或者自己的栈内存，被调用者自己去取，而指令的格式则是：操作码+（多个）操作数**。为实现我们简陋的JVM，理解到这一句话就足够了。
+
+>后面会实现"模版解释器"（希望我能坚持更到那一天），如果你只是想了解，那么cpu执行方法这一章节看不懂可以逃一逃，
+但如果想彻底理解"模版解释器"的原理，cpu执行方法这一章节，躲不了的。当然，如果你看不懂，这也不能全赖你，我也有巨大的责任，我写的不好，请联系我。
+
  <br/>
 
   **<p id="初始执行器">3.初始JVM执行器：</p>**
