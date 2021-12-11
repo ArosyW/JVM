@@ -1758,8 +1758,10 @@ class JavaVFrame {
 ```c++
 void JavaNativeInterface::callStaticMethod(JavaThread* javaThread, MethodInfo *method) {
     printf("===============执行方法 :%s =================\n", method->getMethodName().c_str());
-//    BytecodeInterpreter::run(curThread, method); 
-    JavaVFrame *javaVFrame = javaThread->getAndPop(); // 取值当前线程栈顶的栈帧
+    JavaVFrame *javaVFrame = new JavaVFrame;//马上要执行方法了，先创建栈帧
+    javaThread->stack.push(javaVFrame);//栈帧push进线程的栈空间
+//    BytecodeInterpreter::run(curThread, method); // 执行方法
+    javaThread->stack.pop();//将执行完成的栈桢弹出栈空间
     delete javaVFrame; //释放栈桢内存空间
 }
 ```
@@ -1772,10 +1774,8 @@ void JavaNativeInterface::callStaticMethod(JavaThread* javaThread, MethodInfo *m
 int main() {
     string name = "HelloJVM";
     InstanceKlass *klass = BootClassLoader::loadKlass(name);//加载HelloJVM类
-    MethodInfo *m = JavaNativeInterface::getMethod(klass, "main", "([Ljava/lang/String;)V");//遍历klass所有的方法，找到main方法（这个getMethod没有贴出来，就是一个循环，可以去代码看）
+    MethodInfo *m = JavaNativeInterface::getMethod(klass, "main", "([Ljava/lang/String;)V");//遍历klass所有的方法，找到main方法。getMethod就是一个循环，没有贴出，请去代码中查看。
     JavaThread *javaThread = new JavaThread;//模拟线程的创建
-    JavaVFrame *javaVFrame = new JavaVFrame;//马上要执行方法了，先创建栈帧
-    javaThread->stack.push(javaVFrame);//栈帧push进线程的栈空间
     JavaNativeInterface::callStaticMethod(javaThread,m);//执行main方法
     return 0;
 }
