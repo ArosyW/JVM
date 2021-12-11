@@ -38,7 +38,8 @@
 ##### 3.2[参数/返回值的传递](#传递)
 ##### 3.3[执行器概念](#执行器概念)
 ##### 3.4[方法执行理论示例](#方法执行理论示例)
-#### 4.字节码解释器
+#### 4.[字节码解释器](#字节码解释器)
+##### 4.1[执行环境](#执行环境)
 #### 5.模版解释器 
 ### (三)内存池
 #### 1.Java进程总内存
@@ -49,7 +50,6 @@
 #### 2.新生代 && 老年代 
 ### (五)即时编译
 ### (六)扩展内容
-#### 1.[cpu如何执行指令与方法](#cpu如何执行指令与方法)
 
 ---
       
@@ -1722,10 +1722,75 @@ get(int a, int b)用的，t.get(1, 2)可以理解为t.get(t,1, 2)。调用**静�
 <br/><br/>
 来个很diao的总结：方法调用过程中，参数的传递是**靠调用者将参数写入被调用者的局部变量**表实现的，而返回值的传递是**靠被调用者将返回值push进调用者栈**实现的。如果你仍有疑惑这些逻辑如何通过代码实现，下一章节就是。
 <br/><br/>
+
+
+  **<p id="字节码解释器">4.字节码解释器：</p>**
+
+字节码解释器就是用c\c++来解释JVM指令，首先我们需要准备方法执行环境（线程、栈、栈帧等），找到JVM指令后才能开始解释并执行。
+
+**<p id="执行环境">4.1执行环境：</p>**
+   
+  **本次commit :** 
+
+<br/>
+在[3.4方法执行理论示例](#方法执行理论示例)讲到（3.4章节理论很重要，好好看看），每一个线程都有自己的私有的栈空间，每执行一个方法就会创建一个栈帧push入栈，执行完成再pop出栈。
+显然我们首先要有一个来描述线程的C++类JavaThread,属性是一个栈：
+
+```c++
+class JavaThread {
+    stack<JavaVFrame*> stack; // 线程栈空间
+};
+
+```
+
+而栈里面所存的，应该是栈桢JavaVFrame，还记得栈桢里面有啥吗？栈桢本身可以支持栈的操作（push、pop）,还要有一个局部变量表list：
+
+```c++
+class JavaVFrame {
+    stack<char*> stack; // 方法的栈空间
+    map<int,char*> locals; // 方法的局部变量表
+};
+
+```
+我们的main方法是一个static方法，于是我们可以建一个callStaticMethod的方法，专门用来调用static方法，这样就不局限于main方法了：
+
+```c++
+void JavaNativeInterface::callStaticMethod(JavaThread* javaThread, MethodInfo *method) {
+    printf("===============执行方法 :%s =================\n", method->getMethodName().c_str());
+//    BytecodeInterpreter::run(curThread, method); 
+    JavaVFrame *javaVFrame = javaThread->getAndPop(); // 取值当前线程栈顶的栈帧
+    delete javaVFrame; //释放栈桢内存空间
+}
+```
+
+你会愤怒地发现其中BytecodeInterpreter::run方法我们还没有创建，这就是我们真正解释JVM指令的地方，下一小节实现。
+<br/><br/>
+本章节先来一个测试，还有一个目的就是看下新增的这些类是如何使用的：
+
+```c++
+int main() {
+    string name = "HelloJVM";
+    InstanceKlass *klass = BootClassLoader::loadKlass(name);//加载HelloJVM类
+    MethodInfo *m = JavaNativeInterface::getMethod(klass, "main", "([Ljava/lang/String;)V");//遍历klass所有的方法，找到main方法（这个getMethod没有贴出来，就是一个循环，可以去代码看）
+    JavaThread *javaThread = new JavaThread;//模拟线程的创建
+    JavaVFrame *javaVFrame = new JavaVFrame;//马上要执行方法了，先创建栈帧
+    javaThread->stack.push(javaVFrame);//栈帧push进线程的栈空间
+    JavaNativeInterface::callStaticMethod(javaThread,m);//执行main方法
+    return 0;
+}
+```
+<br/>
+
+输出：<br/>
+
+===============执行方法 :main =================
+
+小总结：我们成功地创建了方法执行所需要的线程、栈、栈帧，就差将方法中的JVM指令取出来解释它了！
+
+
+
 ### (六)扩展内容
  
-**<a id="cpu如何执行指令与方法">1.cpu如何执行指令与方法：</a>**
-
 
 
 
