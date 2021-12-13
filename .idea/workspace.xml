@@ -25,13 +25,22 @@
   </component>
   <component name="CMakeSettings">
     <configurations>
-      <configuration PROFILE_NAME="Debug" CONFIG_NAME="Debug" />
+      <configuration PROFILE_NAME="Debug" ENABLED="true" CONFIG_NAME="Debug" />
     </configurations>
   </component>
   <component name="ChangeListManager">
     <list default="true" id="5bcc33db-55b5-4b9a-b47c-e1d54bcdc620" name="Default Changelist" comment="UPDATE README">
+      <change afterPath="$PROJECT_DIR$/inteoreter/ByteCode.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/inteoreter/BytecodeInterpreter.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/inteoreter/BytecodeInterpreter.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/inteoreter/CodeRunBase.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/inteoreter/CodeRunBase.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/main.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/classFile/BootClassLoader.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/classFile/BootClassLoader.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/inteoreter/BytecodeStream.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/inteoreter/BytecodeStream.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/inteoreter/BytecodeStream.h" beforeDir="false" afterPath="$PROJECT_DIR$/inteoreter/BytecodeStream.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/native/JavaNativeInterface.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/native/JavaNativeInterface.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -48,6 +57,8 @@
   </component>
   <component name="HighlightingSettingsPerFile">
     <setting file="file:///Library/Developer/CommandLineTools/usr/include/c++/v1/__string" root0="SKIP_INSPECTION" />
+    <setting file="file:///Library/Developer/CommandLineTools/usr/include/c++/v1/iostream" root0="SKIP_INSPECTION" />
+    <setting file="file:///Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk/usr/include/pthread/pthread.h" root0="SKIP_INSPECTION" />
   </component>
   <component name="ProjectId" id="21Df2aJhzvmqKFEfczjRlT23a7O" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
@@ -78,9 +89,19 @@
     </key>
   </component>
   <component name="RunManager">
-    <configuration name="JVM" type="CMakeRunConfiguration" factoryName="Application" temporary="true" REDIRECT_INPUT="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JVM" TARGET_NAME="JVM" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="JVM" RUN_TARGET_NAME="JVM">
+    <configuration default="true" type="CLionExternalRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true">
+      <method v="2">
+        <option name="CLION.EXTERNAL.BUILD" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="JVM" type="CMakeRunConfiguration" factoryName="Application" temporary="true" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JVM" TARGET_NAME="JVM" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="JVM" RUN_TARGET_NAME="JVM">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration default="true" type="GradleAppRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true">
+      <method v="2">
+        <option name="com.jetbrains.cidr.cpp.gradle.execution.GradleNativeBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
     <recent_temporary>
@@ -89,7 +110,7 @@
       </list>
     </recent_temporary>
   </component>
-  <component name="SpellCheckerSettings" BundledDictionaries="0" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" Dictionaries="0" CorrectionsLimit="5" DefaultDictionary="application-level" UseSingleDictionary="true" />
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="SvnConfiguration">
     <configuration />
   </component>
@@ -103,6 +124,7 @@
       <workItem from="1637480374991" duration="8011000" />
       <workItem from="1637547634911" duration="4851000" />
       <workItem from="1637559799711" duration="18293000" />
+      <workItem from="1639375900048" duration="7881000" />
     </task>
     <task id="LOCAL-00001" summary="解析常量池">
       <created>1637571501512</created>
@@ -162,68 +184,5 @@
     <MESSAGE value="解析类访问权限" />
     <MESSAGE value="UPDATE README" />
     <option name="LAST_COMMIT_MESSAGE" value="UPDATE README" />
-  </component>
-  <component name="WindowStateProjectService">
-    <state x="533" y="163" key="#com.intellij.ide.util.MemberChooser" timestamp="1639220612382">
-      <screen x="0" y="23" width="1440" height="823" />
-    </state>
-    <state x="533" y="163" key="#com.intellij.ide.util.MemberChooser/0.23.1440.823@0.23.1440.823" timestamp="1639220612382" />
-    <state width="1398" height="213" key="GridCell.Tab.0.bottom" timestamp="1639228023109">
-      <screen x="0" y="23" width="1440" height="823" />
-    </state>
-    <state width="1398" height="213" key="GridCell.Tab.0.bottom/0.23.1440.823@0.23.1440.823" timestamp="1639228023109" />
-    <state width="1398" height="213" key="GridCell.Tab.0.center" timestamp="1639228023108">
-      <screen x="0" y="23" width="1440" height="823" />
-    </state>
-    <state width="1398" height="213" key="GridCell.Tab.0.center/0.23.1440.823@0.23.1440.823" timestamp="1639228023108" />
-    <state width="1398" height="213" key="GridCell.Tab.0.left" timestamp="1639228023107">
-      <screen x="0" y="23" width="1440" height="823" />
-    </state>
-    <state width="1398" height="213" key="GridCell.Tab.0.left/0.23.1440.823@0.23.1440.823" timestamp="1639228023107" />
-    <state width="1398" height="213" key="GridCell.Tab.0.right" timestamp="1639228023108">
-      <screen x="0" y="23" width="1440" height="823" />
-    </state>
-    <state width="1398" height="213" key="GridCell.Tab.0.right/0.23.1440.823@0.23.1440.823" timestamp="1639228023108" />
-    <state width="1398" height="264" key="GridCell.Tab.1.bottom" timestamp="1639223839663">
-      <screen x="0" y="23" width="1440" height="823" />
-    </state>
-    <state width="1398" height="264" key="GridCell.Tab.1.bottom/0.23.1440.823@0.23.1440.823" timestamp="1639223839663" />
-    <state width="1398" height="264" key="GridCell.Tab.1.center" timestamp="1639223839662">
-      <screen x="0" y="23" width="1440" height="823" />
-    </state>
-    <state width="1398" height="264" key="GridCell.Tab.1.center/0.23.1440.823@0.23.1440.823" timestamp="1639223839662" />
-    <state width="1398" height="264" key="GridCell.Tab.1.left" timestamp="1639223839661">
-      <screen x="0" y="23" width="1440" height="823" />
-    </state>
-    <state width="1398" height="264" key="GridCell.Tab.1.left/0.23.1440.823@0.23.1440.823" timestamp="1639223839661" />
-    <state width="1398" height="264" key="GridCell.Tab.1.right" timestamp="1639223839663">
-      <screen x="0" y="23" width="1440" height="823" />
-    </state>
-    <state width="1398" height="264" key="GridCell.Tab.1.right/0.23.1440.823@0.23.1440.823" timestamp="1639223839663" />
-    <state x="420" y="192" width="600" height="486" key="find.popup" timestamp="1639218030840">
-      <screen x="0" y="23" width="1440" height="823" />
-    </state>
-    <state x="420" y="192" width="600" height="486" key="find.popup/0.23.1440.823@0.23.1440.823" timestamp="1639218030840" />
-  </component>
-  <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
-          <url>file://$PROJECT_DIR$/classFile/ClassFileParser.cpp</url>
-          <line>150</line>
-          <option name="timeStamp" value="9" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
-          <url>file://$PROJECT_DIR$/classFile/ClassFileParser.cpp</url>
-          <line>155</line>
-          <option name="timeStamp" value="10" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
-          <url>file://$PROJECT_DIR$/classFile/ClassFileParser.cpp</url>
-          <line>23</line>
-          <option name="timeStamp" value="11" />
-        </line-breakpoint>
-      </breakpoints>
-    </breakpoint-manager>
   </component>
 </project>

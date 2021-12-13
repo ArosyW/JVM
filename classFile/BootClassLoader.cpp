@@ -4,7 +4,7 @@
 
 #include "BootClassLoader.h"
 #include "ClassFileParser.h"
-string BootClassLoader::prePath = "/Users/eba/Documents/github/JDK/out/production/JDK/";
+string BootClassLoader::prePath = "/Users/e/Documents/github/JDK/out/production/JDK/";
 map<string, InstanceKlass *> BootClassLoader::allClass;
 
 InstanceKlass *BootClassLoader::loadKlass(string &p) {

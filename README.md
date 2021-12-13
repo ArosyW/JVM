@@ -33,13 +33,15 @@
 ### (二)执行引擎
 #### 1.[cpu是如何执行指令的](#cpu是如何执行指令的)
 #### 2.[cpu是如何执行方法的](#cpu是如何执行方法的)
-#### 3.[初始JVM执行器](#初始执行器)
+#### 3.[初识JVM执行器](#初识执行器)
 ##### 3.1[JVM指令集](#JVM指令集)
 ##### 3.2[参数/返回值的传递](#传递)
 ##### 3.3[执行器概念](#执行器概念)
 ##### 3.4[方法执行理论示例](#方法执行理论示例)
 #### 4.[字节码解释器](#字节码解释器)
 ##### 4.1[执行环境](#执行环境)
+##### 4.2[指令解释](#指令解释)
+###### 4.2.1[NOP指令的实现](#NOP)
 #### 5.模版解释器 
 ### (三)内存池
 #### 1.Java进程总内存
@@ -1554,7 +1556,7 @@ movl   %eax, -0x8(%rbp) // 将eax寄存器的值赋值给rbp寄存器往下8个�
 
  <br/>
 
-  **<p id="初始执行器">3.初始JVM执行器：</p>**
+  **<p id="初识执行器">3.初识JVM执行器：</p>**
 
   JVM全称Java虚拟机，所谓虚拟机，即是虚拟的计算机，再换句话说，它模拟了计算机执行指令的过程。
 
@@ -1566,7 +1568,7 @@ movl   %eax, -0x8(%rbp) // 将eax寄存器的值赋值给rbp寄存器往下8个�
 * 但是cpu能够执行指令是因为这是焊死在硬件里的，通过"译码器"可以识别，而JVM自己自定义的指令集是不能被cpu所能识别的。<br/><br/>
 * 因此JVM需要自己实现逻辑去解释这些指令到底是啥意思。<br/><br/>
 * 最终还是会被编译成cpu所能识别的指令集才能被cpu正确执行。<br/><br/>
-* 并且，每个指令占用字节数也是有约定的。（撸代码时会详细讲述这种约定）
+* 并且，每个指令占用字节数也是有约定的。（撸代码时会详细讲述这种约定，[点我跳转](#指令解释)）
 
 **<p id="传递">3.2 参数/返回值的传递：</p>**
   
@@ -1788,7 +1790,158 @@ int main() {
 
 小总结：我们成功地创建了方法执行所需要的线程、栈、栈帧，就差将方法中的JVM指令取出来解释它了！
 
+**<p id="指令解释">4.2指令解释：</p>**
 
+**<p id="NOP">4.2.1 NOP指令的实现：</p>**
+
+**本次commit :** 
+
+<br/>
+
+JVM指令格式：
+
+| 操作码  | 操作数  | 
+| ----  | ----  | 
+|    1字节 |  \>\=0字节 |  
+
+操作码只占一个字节，意味着JVM指令最多有256条指令，实际上已经定义了200多条。每一个操作码都**约定**好了后面跟多少个字节的操作数，而这种约定在Hotspot源码中的Bytecodes::initialize()中详细定义了，
+取两个举一个栗子🌰：
+
+| name  | 格式  | 16进制
+| ----  | ----  | ----  |
+|    nop |  b | 0 | 
+|    iload |  bi | 0x15 |
+|    bipush |  bc | 0x10 |
+
+<br/><br/>
+**其中格式，假设字母数量为length,就表示这条指令所占字节总数为length。**
+<br/><br/>
+>一个栗子🌰：
+先读取一个字节，发现是0，则表示是nop指令，
+它的格式是b，只有一个英文字母，意味着这条指令只占一个字节，而这一个字节就是我们已经读取到的0,那么这一条指令就到此为止了。
+
+<br/><br/>
+
+>两个栗子🌰：
+先读取一个字节，发现是0x15，则表示是iload指令，
+它的格式是bi，有2个英文字母，意味着这条指令占2个字节，而第一个字节就是我们已经读取到的0x15,还要再读取一个字节，然后把这个字节推向栈顶。
+
+<br/><br/>
+其中b、bi、bc，还会有'bk'等，解释一下这些字母的含义：
+
+| 字母  | 意义  | 
+| ----  | ----  | 
+|    b |  这条指令的长度是不可变的 | 
+|    c |  操作数为有符号的常量 | 
+|    i |  无符号的本地变量表索引 | 
+|    j |  常量池缓存索引 | 
+|    k |  无符号常量池索引 | 
+|    o |  分支偏移 | 
+|    _ |  可忽略 | 
+|    w |  可用来扩展局部变量表索引的字节码 | 
+
+我只是随便贴一贴，显得很全面，这些东西硬生生的去理解自然是困难的，我们还是一条一条指令地来实现吧，莫慌，大部分指令三五行代码就结束了。
+<br/><br/>
+Dont talk,show you my code！
+
+先把上一小节缺失的JVM指令执行方法BytecodeInterpreter::run 补一下：
+
+```c++
+bool BytecodeInterpreter::run(JavaThread *javaThread, MethodInfo *methodInfo) {
+    //取出字节码指令
+    BytecodeStream *bytecodeStream = methodInfo->getAttributeInfo()->getCode();
+    int index = 0;
+    while (index < bytecodeStream->getLength()) {
+        unsigned char c = bytecodeStream->readByOne(index);
+        printf("指令字节：%X\n", c);
+        //todo 对操作码c进行解释
+    }
+    printf("===============执行方法结束 :%s =================\n", methodInfo->getMethodName().c_str());
+    return true;
+};
+```
+<br/><br/>
+我们在类加载的时候已经把JVM指令存储在每个方法的CodeAttributeInfo属性中了，get一下就能取到，然后就一个字节一个字节的读就完事了。
+上面代码中第一次读取到的c就是我们这个方法的第一条字节码指令，假如这个c==0, 那么就是我们的nop指令，可惜不等于0。
+<br/><br/>
+
+上面代码中的todo应该怎么写呢？第一反应肯定是switch case，类似于：
+
+```c++
+    while (index < bytecodeStream->getLength()) {
+        unsigned char c = bytecodeStream->readByOne(index);
+        printf("指令字节：%X\n", c);
+        switch (c) {
+            case 0:
+                printf("执行nop指令\n");
+                break;
+            case 1:
+                ……
+                break;
+        }
+    }
+```
+但是JVM有两百多个指令，我无法忍受要写两百多个case。所以这里我们稍微骚操作一下，这些指令无非就是0到256个数字，那么我们可以用一个数组，这个数组里面存的是每一条
+指令的解释逻辑封装成的方法，而索引就是这0到256个数字，在c\c++中是可以做到的，于是我们新建一个真正解释JVM指令的c++类：
+
+```c++
+CODERUN CodeRunBase::run[256];
+void CodeRunBase::initCodeRun(){
+    run[NOP] = funcNOP; // NOP枚举值为0
+}
+void CodeRunBase::funcNOP(JavaThread *javaThread, BytecodeStream *bytecodeStream , int& index) {
+//nop指令什么也不做
+}
+```
+
+于是在BytecodeInterpreter::run中我们可以这样去使用它：
+
+```c++
+bool BytecodeInterpreter::run(JavaThread *javaThread, MethodInfo *methodInfo) {
+    //取出字节码指令
+    BytecodeStream *bytecodeStream = methodInfo->getAttributeInfo()->getCode();
+    int index = 0;
+    while (index < bytecodeStream->getLength()) {
+        unsigned char c = bytecodeStream->readByOne(index);
+        printf("指令字节：%X\n", c);
+        CodeRunBase::run[c](javaThread, bytecodeStream, index); //解释指令
+    }
+    printf("===============执行方法结束 :%s =================\n", methodInfo->getMethodName().c_str());
+    return true;
+};
+```
+来做一个测试（main方法本小节无改动）：
+
+```c++
+int main() {
+    string name = "HelloJVM";
+    InstanceKlass *klass = BootClassLoader::loadKlass(name);//加载HelloJVM类
+    MethodInfo *m = JavaNativeInterface::getMethod(klass, "main", "([Ljava/lang/String;)V");//遍历klass所有的方法，找到main方法
+    JavaThread *javaThread = new JavaThread;//模拟线程的创建
+    JavaNativeInterface::callStaticMethod(javaThread,m);//执行main方法
+    return 0;
+}
+```
+<br/>
+
+输出：<br/>
+
+>===============执行方法开始 :main =================
+<br/>
+指令字节：B2
+<br/>指令字节：0
+<br/>指令字节：2
+<br/>指令字节：4
+<br/>指令字节：B6
+<br/>指令字节：0
+<br/>指令字节：3
+<br/>指令字节：B1
+<br/>===============执行方法结束 :main =================
+
+<br/>其实只有 "指令字节：B2" 是正确的，因为我们还没有实现解释B2指令的逻辑，所以导致后面的指令都是错乱的，而B2
+所对应的指令是GetStatic指令，接下来就整它！
+
+小总结：本章节说了一大堆，其实就是把JVM指令解释的逻辑封装成一个个方法，放进数组，然后实现了一下nop指令，算是举了一个栗子🌰。
 
 ### (六)扩展内容
  

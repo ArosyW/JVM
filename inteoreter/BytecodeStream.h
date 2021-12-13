@@ -40,6 +40,10 @@ public:
     BytecodeStream(MethodInfo *belongMethod, CodeAttributeInfo *belongCode, int length, int index, char *codes);
 
     BytecodeStream();
+
+    unsigned char readByOne(int &offset);
+
+    unsigned short readByTwo(int &offset);
 };
 
 

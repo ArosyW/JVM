@@ -52,3 +52,13 @@ BytecodeStream::BytecodeStream(MethodInfo *belongMethod, CodeAttributeInfo *belo
 
 BytecodeStream::BytecodeStream() {}
 
+unsigned char BytecodeStream::readByOne(int &offset) {
+    return *(unsigned char *) (codes + offset++);
+};
+
+unsigned short BytecodeStream::readByTwo(int &offset) {
+    unsigned short *res = (unsigned short *) (codes + offset);
+    offset += 2;
+    return htons(*res);
+};
+
