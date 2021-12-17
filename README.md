@@ -43,6 +43,7 @@
 ##### 4.2[指令解释](#指令解释)
 ###### 4.2.1[JVM指令格式 与 nop指令的实现](#nop)
 ###### 4.2.2[getstatic指令的实现](#getstatic)
+###### 4.2.3[iconst0指令的实现](#iconst0)
 #### 5.模版解释器 
 ### (三)内存池
 #### 1.Java进程总内存
@@ -2058,6 +2059,28 @@ void startVM(){
 时就执行不下去了。我们先把我们需要的指令的逻辑写完，后面再处理这些问题。
 
 小总结：我们通过getstatic指令的操作数从Class常量池中获得了getstatic指令所需要的 类名、变量名，并把变量的值推向了栈顶。
+
+**<p id="iconst0">4.2.3 iconst0指令的实现：</p>**
+
+**本次commit :** 
+
+<br/>
+
+>为了给你增强信心，所以特意在这先实现一个简单的命令。
+
+<br/><br/>
+iconst0 的意思是将int类型的0推向栈顶：
+
+```c++
+
+void CodeRunBase::funcICONST0(JavaThread *javaThread, BytecodeStream *bytecodeStream , int& index) {
+    javaThread->stack.top()->stack.push(new CommonValue(T_INT, 0));
+}
+
+```
+
+是的这条指令就一行代码就完成了，事实上很多指令都是这样的，等我们实现完我们本次需要使用到的指令时，再来实现其他的指令。是不是瞬间又有了信心！
+
 
 
 ### (六)扩展内容

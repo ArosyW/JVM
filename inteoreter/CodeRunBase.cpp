@@ -5,11 +5,14 @@
 #include "CodeRunBase.h"
 #include "../oop/InstanceKlass.h"
 #include "../classFile/BootClassLoader.h"
+#include "ByteType.h"
+
 typedef void (*CODERUN)(JavaThread *javaThread, BytecodeStream *bytecodeStream , int& index);
 CODERUN CodeRunBase::run[256];
 void CodeRunBase::initCodeRun(){
     run[NOP] = funcNOP; // NOP枚举值为0
     run[GETSTATIC] = funcGETSTATIC;
+    run[ICONST_0] = funcICONST0;
 }
 void CodeRunBase::funcNOP(JavaThread *javaThread, BytecodeStream *bytecodeStream , int& index) {
 //nothing to do
@@ -24,4 +27,7 @@ void CodeRunBase::funcGETSTATIC(JavaThread *javaThread, BytecodeStream *bytecode
     InstanceKlass *klass = BootClassLoader::loadKlass(className); //根据类名取得加载完的klass对象
     CommonValue *commonValue = klass->staticValue[fieldName]; // 根据变量名取出 值
     javaThread->stack.top()->stack.push(new CommonValue(commonValue->type, commonValue->val)); //将前面取出的值推向栈顶
+}
+void CodeRunBase::funcICONST0(JavaThread *javaThread, BytecodeStream *bytecodeStream , int& index) {
+    javaThread->stack.top()->stack.push(new CommonValue(T_INT, 0)); // 将int类型的0推向栈顶
 }

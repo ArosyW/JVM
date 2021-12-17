@@ -16,6 +16,7 @@ public:
     static void initCodeRun();
     static void funcNOP(JavaThread *javaThread, BytecodeStream *bytecodeStream , int& index);
     static void funcGETSTATIC(JavaThread *javaThread, BytecodeStream *bytecodeStream , int& index);
+    static void funcICONST0(JavaThread *javaThread, BytecodeStream *bytecodeStream , int& index);
 };
 
 
