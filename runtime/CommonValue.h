@@ -16,6 +16,8 @@ public:
      * @param val
      */
     CommonValue(int type, char *val);
+
+    CommonValue();
 };
 
 

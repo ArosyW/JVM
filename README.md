@@ -44,6 +44,7 @@
 ###### 4.2.1[JVM指令格式 与 nop指令的实现](#nop)
 ###### 4.2.2[getstatic指令的实现](#getstatic)
 ###### 4.2.3[iconst0指令的实现](#iconst0)
+###### 4.2.4[putstatic指令的实现](#putstatic)
 #### 5.模版解释器 
 ### (三)内存池
 #### 1.Java进程总内存
@@ -2081,6 +2082,36 @@ void CodeRunBase::funcICONST0(JavaThread *javaThread, BytecodeStream *bytecodeSt
 
 是的这条指令就一行代码就完成了，事实上很多指令都是这样的，等我们实现完我们本次需要使用到的指令时，再来实现其他的指令。是不是瞬间又有了信心！
 
+**<p id="putstatic">4.2.4 putstatic指令的实现：</p>**
+
+**本次commit :** 
+
+<br/>
+
+putstatic 指令的格式：
+<br/>
+
+| name  | 操作码  | 操作数
+| ----  | ----  | ----  |
+|    getstatic |  1字节 | 2字节 |
+
+刚好与getstatic指令相反，getstatic指令是从类中取出静态变量推向栈顶，putstatic是从栈顶弹出一个静态变量写入类中：
+
+```c++
+
+void CodeRunBase::funcPUTSTATIC(JavaThread *javaThread, BytecodeStream *bytecodeStream , int& index) {
+    printf("    **执行指令PUTSTATIC\n");
+    unsigned short opera = bytecodeStream->readByTwo(index);//取出操作数
+    printf("\t\tconstantPool index is:%d\n", opera);
+    string className = bytecodeStream->getBelongMethod()->getBelongKlass()->getConstantPool()->getClassNameByFieldInfo(opera);// 根据操作数 从 常量池获取类名
+    string fieldName = bytecodeStream->getBelongMethod()->getBelongKlass()->getConstantPool()->getFieldName(opera);// 根据操作数 从 常量池获取变量名
+    printf("\t\tclassName:%s,fieldName:%s\n", className.c_str(), fieldName.c_str());
+    CommonValue* value =javaThread->stack.top()->pop(); //弹出栈顶变量
+    InstanceKlass *klass = BootClassLoader::loadKlass(className);//根据类名取得加载完的klass对象
+    klass->staticValue[fieldName] = value; //将从栈顶获得的静态变量写入类
+}
+
+```
 
 
 ### (六)扩展内容

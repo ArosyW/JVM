@@ -13,6 +13,7 @@ class JavaVFrame {
 public:
     stack<CommonValue*> stack; // 方法的栈空间
     map<int,CommonValue*> locals; // 方法的局部变量表
+    CommonValue* pop();
 };
 
 

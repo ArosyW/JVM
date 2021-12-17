@@ -5,3 +5,5 @@
 #include "CommonValue.h"
 
 CommonValue::CommonValue(int type, char *val) : type(type), val(val) {}
+
+CommonValue::CommonValue() {}
