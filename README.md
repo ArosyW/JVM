@@ -56,7 +56,7 @@
 #### 2.新生代 && 老年代 
 ### (五)即时编译
 ### (六)扩展内容
-
+### (七)勘误
 ---
       
 ## 三、猛男讲解
@@ -2115,7 +2115,7 @@ void CodeRunBase::funcPUTSTATIC(JavaThread *javaThread, BytecodeStream *bytecode
 ```
 **<p id="ldc">4.2.5 ldc指令的实现：</p>**
 
-**本次commit :** 
+**本次commit :** 03c113485ab72a91b6cd57f4da46fe2752f1614a
 
 <br/>
 
@@ -2125,7 +2125,7 @@ ldc指令格式：
 | ----  | ----  | ----  |
 |    ldc |  1字节 | 1字节 |
 
-这一个自己的操作数是指Class常量池的索引，意思是将一个常量池的值推向栈顶。
+这一个字节的操作数是指Class常量池的索引，意思是将一个常量池的值推向栈顶。
 <br/><br/>
 当然，这个值是需要区分类型的，还记得常量池的类型存储在哪里吗？在ConstantPool中的tag属性中。我们这里只用到了String，于是我们这样来解释ldc指令：
 
@@ -2157,6 +2157,8 @@ void CodeRunBase::funcLDC(JavaThread *javaThread, BytecodeStream *bytecodeStream
 
 
 ### (六)扩展内容
+
+### (七)勘误
  
 
 
