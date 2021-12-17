@@ -45,6 +45,7 @@
 ###### 4.2.2[getstatic指令的实现](#getstatic)
 ###### 4.2.3[iconst0指令的实现](#iconst0)
 ###### 4.2.4[putstatic指令的实现](#putstatic)
+###### 4.2.5[ldc指令的实现](#ldc)
 #### 5.模版解释器 
 ### (三)内存池
 #### 1.Java进程总内存
@@ -2112,6 +2113,47 @@ void CodeRunBase::funcPUTSTATIC(JavaThread *javaThread, BytecodeStream *bytecode
 }
 
 ```
+**<p id="ldc">4.2.5 ldc指令的实现：</p>**
+
+**本次commit :** 
+
+<br/>
+
+ldc指令格式：
+
+| name  | 操作码  | 操作数
+| ----  | ----  | ----  |
+|    ldc |  1字节 | 1字节 |
+
+这一个自己的操作数是指Class常量池的索引，意思是将一个常量池的值推向栈顶。
+<br/><br/>
+当然，这个值是需要区分类型的，还记得常量池的类型存储在哪里吗？在ConstantPool中的tag属性中。我们这里只用到了String，于是我们这样来解释ldc指令：
+
+```c++
+
+void CodeRunBase::funcLDC(JavaThread *javaThread, BytecodeStream *bytecodeStream , int& index) {
+    printf("    **执行指令LDC\n");
+    unsigned char opera = bytecodeStream->readByOne(index);//取出操作数
+    unsigned char tag = *(bytecodeStream->getBelongMethod()->getBelongKlass()->getConstantPool()->tag + opera);//从常量池的类型中取出本次ldc指令操作的数据类型
+    switch (tag) {
+        case CONSTANT_Float:
+            break;
+        case CONSTANT_String: {
+            int index = *bytecodeStream->getBelongMethod()->getBelongKlass()->getConstantPool()->data[opera]; //从常量池获取索引
+            string str = bytecodeStream->getBelongMethod()->getBelongKlass()->getConstantPool()->getStringFromPool(index);//从常量池获取string的内容
+            javaThread->stack.top()->stack.push(new CommonValue(T_OBJECT, (char *)str.c_str()));//入栈
+            break;
+        }
+        case CONSTANT_Class:
+            break;
+        default:
+            printf("未知类型\n");
+    }
+}
+
+```
+
+
 
 
 ### (六)扩展内容

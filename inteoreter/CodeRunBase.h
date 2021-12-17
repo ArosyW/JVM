@@ -17,6 +17,7 @@ public:
     static void funcNOP(JavaThread *javaThread, BytecodeStream *bytecodeStream , int& index);
     static void funcGETSTATIC(JavaThread *javaThread, BytecodeStream *bytecodeStream , int& index);
     static void funcPUTSTATIC(JavaThread *javaThread, BytecodeStream *bytecodeStream , int& index);
+    static void funcLDC(JavaThread *javaThread, BytecodeStream *bytecodeStream , int& index);
     static void funcICONST0(JavaThread *javaThread, BytecodeStream *bytecodeStream , int& index);
 };
 

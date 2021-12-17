@@ -16,6 +16,9 @@ public:
     string getClassNameByFieldInfo(unsigned short index);
 
     string getFieldName(unsigned short index);
+
+    string getStringFromPool(unsigned short index);
+
 };
 
 

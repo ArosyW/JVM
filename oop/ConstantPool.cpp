@@ -29,3 +29,7 @@ string ConstantPool::getFieldName(unsigned short index){
     int t = nameAndType >> 16; // 取nameAndType的索引 的左16位
     return (data[t]); // 返回变量名
 };
+
+string ConstantPool::getStringFromPool(unsigned short index){
+    return  (data[index]);
+};
