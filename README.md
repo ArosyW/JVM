@@ -2093,7 +2093,7 @@ putstatic 指令的格式：
 
 | name  | 操作码  | 操作数
 | ----  | ----  | ----  |
-|    getstatic |  1字节 | 2字节 |
+|    putstatic |  1字节 | 2字节 |
 
 刚好与getstatic指令相反，getstatic指令是从类中取出静态变量推向栈顶，putstatic是从栈顶弹出一个静态变量写入类中：
 
