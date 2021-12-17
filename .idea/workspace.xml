@@ -30,18 +30,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="5bcc33db-55b5-4b9a-b47c-e1d54bcdc620" name="Default Changelist" comment="UPDATE README">
-      <change afterPath="$PROJECT_DIR$/runtime/CommonValue.cpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/runtime/CommonValue.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/inteoreter/CodeRunBase.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/inteoreter/CodeRunBase.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/inteoreter/CodeRunBase.h" beforeDir="false" afterPath="$PROJECT_DIR$/inteoreter/CodeRunBase.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/main.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/oop/ConstantPool.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/oop/ConstantPool.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/oop/ConstantPool.h" beforeDir="false" afterPath="$PROJECT_DIR$/oop/ConstantPool.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/oop/InstanceKlass.h" beforeDir="false" afterPath="$PROJECT_DIR$/oop/InstanceKlass.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/runtime/JavaVFrame.h" beforeDir="false" afterPath="$PROJECT_DIR$/runtime/JavaVFrame.h" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -125,7 +114,7 @@
       <workItem from="1637547634911" duration="4851000" />
       <workItem from="1637559799711" duration="18293000" />
       <workItem from="1639375900048" duration="8831000" />
-      <workItem from="1639655542077" duration="7888000" />
+      <workItem from="1639655542077" duration="8203000" />
     </task>
     <task id="LOCAL-00001" summary="解析常量池">
       <created>1637571501512</created>

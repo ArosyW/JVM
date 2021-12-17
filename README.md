@@ -41,8 +41,8 @@
 #### 4.[字节码解释器](#字节码解释器)
 ##### 4.1[执行环境](#执行环境)
 ##### 4.2[指令解释](#指令解释)
-###### 4.2.1[nop指令的实现](#nop)
-###### 4.2.2[getstatic指令的实现](#GETSTATIC)
+###### 4.2.1[JVM指令格式 与 nop指令的实现](#nop)
+###### 4.2.2[getstatic指令的实现](#getstatic)
 #### 5.模版解释器 
 ### (三)内存池
 #### 1.Java进程总内存
@@ -1948,7 +1948,7 @@ int main() {
 
 **<p id="getstatic">4.2.2 getstatic指令的实现：</p>**
 
-**本次commit :** 
+**本次commit :** 21f5b84755df4520f6e806deb343555c5fa52c59
 
 <br/>
 getstatic 指令的格式：
@@ -2045,12 +2045,11 @@ void startVM(){
 <br/>
 
 输出：<br/>
->===============执行方法开始 :main =================
-<br/>
-指令字节：B2<br/>
-*执行指令GETSTATIC<br/>
-constantPool index is:2<br/>
-className:java/lang/System,fieldName:out
+>===============执行方法开始 :main =================<br/>
+>指令字节：B2<br/>
+>    *执行指令GETSTATIC<br/>
+>    constantPool index is:2<br/>
+>    className:java/lang/System,fieldName:out
 
 由于我们目前还不能正确地加载java/lang/System类，所以我们的方法在执行
 ```c++
