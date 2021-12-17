@@ -10,6 +10,7 @@
 #include "FieldsInfo.h"
 #include "MethodInfo.h"
 #include "AttributeInfo.h"
+#include "../runtime/CommonValue.h"
 
 class InstanceKlass {
     int magic; //魔数，CAFEBABE:用来校验是否是.class文件
@@ -28,6 +29,8 @@ class InstanceKlass {
     MethodInfo *methodInfo;//方法
     short attributeCount;//属性数量
     AttributeInfo *attributeInfo;//属性
+public:
+    map<string, CommonValue*> staticValue; //静态变量
 
 /**
    * 以下为getter && setter && 构造方法

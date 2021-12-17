@@ -6,12 +6,13 @@
 #define JVM_JAVAVFRAME_H
 #include "stack"
 #include "map"
+#include "CommonValue.h"
 using namespace std;
 
 class JavaVFrame {
 public:
-    stack<char*> stack; // 方法的栈空间
-    map<int,char*> locals; // 方法的局部变量表
+    stack<CommonValue*> stack; // 方法的栈空间
+    map<int,CommonValue*> locals; // 方法的局部变量表
 };
 
 

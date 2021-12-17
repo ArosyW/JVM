@@ -41,7 +41,8 @@
 #### 4.[字节码解释器](#字节码解释器)
 ##### 4.1[执行环境](#执行环境)
 ##### 4.2[指令解释](#指令解释)
-###### 4.2.1[NOP指令的实现](#NOP)
+###### 4.2.1[nop指令的实现](#nop)
+###### 4.2.2[getstatic指令的实现](#GETSTATIC)
 #### 5.模版解释器 
 ### (三)内存池
 #### 1.Java进程总内存
@@ -1792,7 +1793,9 @@ int main() {
 
 **<p id="指令解释">4.2指令解释：</p>**
 
-**<p id="NOP">4.2.1 NOP指令的实现：</p>**
+在指令在解释的实现过程中我们会优先实现我们的HelloJVM用到的：getstatic、
+
+**<p id="nop">4.2.1 NOP指令的实现：</p>**
 
 **本次commit :** 0028cd2c8ebcd5ccabd391f1f89ab4d2a07001cb
 
@@ -1942,6 +1945,121 @@ int main() {
 所对应的指令是GetStatic指令，接下来就整它！
 
 小总结：本章节说了一大堆，其实就是把JVM指令解释的逻辑封装成一个个方法，放进数组，然后实现了一下nop指令，算是举了一个栗子🌰。
+
+**<p id="getstatic">4.2.2 getstatic指令的实现：</p>**
+
+**本次commit :** 
+
+<br/>
+getstatic 指令的格式：
+<br/>
+
+| name  | 操作码  | 操作数
+| ----  | ----  | ----  |
+|    getstatic |  1字节 | 2字节 |
+
+<br/>
+意思是从某个Java类中获取它的一个静态变量的值，push进当前方法的栈顶，伪代码：
+
+```c++
+    var value = getByClass(name);
+    stack.push(value);
+```
+为了更好的存储变量，我们抽象一个C++类专门用来描述变量的值：
+
+```c++
+class CommonValue {
+    int type ;//值的类型：int、byte、float……
+    char *val;//值
+};
+```
+
+<br/>
+可是类的静态变量我们还没有地方来存储，是不可能获取到的，所以我们先在InstanceKlass中新增一个map用来存储类的静态变量：
+<br/>
+
+```c++
+class InstanceKlass {
+    int magic; //魔数，CAFEBABE:用来校验是否是.class文件
+    short minorVersion; //JDK次版本号
+    …………
+    map<string, CommonValue*> staticValue; //静态变量 （新增）
+}
+```
+
+还需要两个方法用来通过"操作数"，从Class常量池中获取到类名、属性名，由于是从Class常量池中获取，所以我们把它新增在ConstantPool类中：
+
+```c++
+string ConstantPool::getClassNameByFieldInfo(unsigned short index){
+    int i = htonl(*(int *)data[index]); //取出索引
+    int classIndex = i >> 16; // 取出i的左16位
+    //获取class全限定名
+    int classNameIndex = *data[classIndex]; //取出类名的索引
+    return (data[classNameIndex]); // 返回类名
+};
+
+string ConstantPool::getFieldName(unsigned short index){
+    int i = htonl(*(int *)data[index]);//取出索引
+    int ind = i & 0xFF; // 取出i的右16位
+    int nameAndType = htonl(*(int *)data[ind]); // 取出nameAndType的索引
+    int t = nameAndType >> 16; // 取nameAndType的索引 的左16位
+    return (data[t]); // 返回变量名
+};
+    
+```
+看懵了吗？你只需要知道这些属性都是我们在解析常量池的时候存进去的，现在取出来就可以了。可以回去看一下我们是怎么存的file、method、Interface Methodref。
+
+于是我们的getstatic方法就出来了:
+```c++
+void CodeRunBase::funcGETSTATIC(JavaThread *javaThread, BytecodeStream *bytecodeStream , int& index) {
+    printf("    *执行指令GETSTATIC\n");
+    unsigned short opera = bytecodeStream->readByTwo(index); //取出操作数
+    printf("\t\tconstantPool index is:%d\n", opera);
+    string className = bytecodeStream->getBelongMethod()->getBelongKlass()->getConstantPool()->getClassNameByFieldInfo(opera); // 根据操作数 从 常量池获取类名
+    string fieldName = bytecodeStream->getBelongMethod()->getBelongKlass()->getConstantPool()->getFieldName(opera);// 根据操作数 从 常量池获取变量名
+    printf("\t\tclassName:%s,fieldName:%s\n", className.c_str(), fieldName.c_str());
+    InstanceKlass *klass = BootClassLoader::loadKlass(className); //根据类名取得加载完的klass对象
+    CommonValue *commonValue = klass->staticValue[fieldName]; // 根据变量名取出 值
+    javaThread->stack.top()->stack.push(new CommonValue(commonValue->type, commonValue->val)); //将前面取出的值推向栈顶
+}
+```
+
+<br/>
+
+来做一个测试（main方法本小节无改动）：
+
+```c++
+int main() {
+    startVM();
+    string name = "HelloJVM";
+    InstanceKlass *klass = BootClassLoader::loadKlass(name);//加载HelloJVM类
+    MethodInfo *m = JavaNativeInterface::getMethod(klass, "main", "([Ljava/lang/String;)V");//遍历klass所有的方法，找到main方法
+    JavaThread *javaThread = new JavaThread;//模拟线程的创建
+    JavaNativeInterface::callStaticMethod(javaThread,m);//执行main方法
+    return 0;
+}
+void startVM(){
+    CodeRunBase::initCodeRun();//初始化字节码解释器，把解析JVM指令的方法全部存入map,以便使用
+};
+```
+<br/>
+
+输出：<br/>
+>===============执行方法开始 :main =================
+<br/>
+指令字节：B2<br/>
+*执行指令GETSTATIC<br/>
+constantPool index is:2<br/>
+className:java/lang/System,fieldName:out
+
+由于我们目前还不能正确地加载java/lang/System类，所以我们的方法在执行
+```c++
+    InstanceKlass *klass = BootClassLoader::loadKlass(className); //根据类名取得加载完的klass对象
+```
+时就执行不下去了。我们先把我们需要的指令的逻辑写完，后面再处理这些问题。
+
+小总结：我们通过getstatic指令的操作数从Class常量池中获得了getstatic指令所需要的 类名、变量名，并把变量的值推向了栈顶。
+
 
 ### (六)扩展内容
  
