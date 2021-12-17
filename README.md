@@ -2062,7 +2062,7 @@ void startVM(){
 
 **<p id="iconst0">4.2.3 iconst0指令的实现：</p>**
 
-**本次commit :** 
+**本次commit :** ba117068ad7af8bfc726a03fcbb9280e60fcb982
 
 <br/>
 
