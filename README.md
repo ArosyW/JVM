@@ -54,6 +54,7 @@
 ###### 4.2.3[iconst0指令的实现](#iconst0)
 ###### 4.2.4[putstatic指令的实现](#putstatic)
 ###### 4.2.5[ldc指令的实现](#ldc)
+###### 4.2.6[dup指令的实现](#dup)
 #### 5.模版解释器 
 ### (三)内存池
 #### 1.Java进程总内存
@@ -2161,6 +2162,20 @@ void CodeRunBase::funcLDC(JavaThread *javaThread, BytecodeStream *bytecodeStream
 
 ```
 
+**<p id="dup">4.2.6 dup指令的实现：</p>**
+
+**本次commit :** 
+
+<br/>
+
+这条指令也很简单，把栈顶的值复制一份推向栈顶就完事，于是我们这样来解释dup指令：
+
+```c++
+void CodeRunBase::funcDUP(JavaThread *javaThread, BytecodeStream *bytecodeStream , int& index) {
+    CommonValue *cv = javaThread->stack.top()->stack.top(); //获取栈顶值
+    javaThread->stack.top()->stack.push(cv); // 推向栈顶
+}
+```
 
 
 

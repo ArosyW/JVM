@@ -16,6 +16,7 @@ void CodeRunBase::initCodeRun(){
     run[ICONST_0] = funcICONST0;
     run[PUTSTATIC] = funcPUTSTATIC;
     run[LDC] = funcLDC;
+    run[DUP] = funcDUP;
 }
 void CodeRunBase::funcNOP(JavaThread *javaThread, BytecodeStream *bytecodeStream , int& index) {
 //nothing to do .
@@ -63,4 +64,9 @@ void CodeRunBase::funcLDC(JavaThread *javaThread, BytecodeStream *bytecodeStream
 }
 void CodeRunBase::funcICONST0(JavaThread *javaThread, BytecodeStream *bytecodeStream , int& index) {
     javaThread->stack.top()->stack.push(new CommonValue(T_INT, 0)); // 将int类型的0推向栈顶
+}
+
+void CodeRunBase::funcDUP(JavaThread *javaThread, BytecodeStream *bytecodeStream , int& index) {
+    CommonValue *cv = javaThread->stack.top()->stack.top(); //获取栈顶值
+    javaThread->stack.top()->stack.push(cv); // 推向栈顶
 }

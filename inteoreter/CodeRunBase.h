@@ -19,6 +19,7 @@ public:
     static void funcPUTSTATIC(JavaThread *javaThread, BytecodeStream *bytecodeStream , int& index);
     static void funcLDC(JavaThread *javaThread, BytecodeStream *bytecodeStream , int& index);
     static void funcICONST0(JavaThread *javaThread, BytecodeStream *bytecodeStream , int& index);
+    static void funcDUP(JavaThread *javaThread, BytecodeStream *bytecodeStream , int& index);
 };
 
 
