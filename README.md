@@ -67,6 +67,8 @@
 ### (五)即时编译
 ### (六)扩展内容
 ### (七)勘误
+#### 1.[解析常量池时多循环了一次](#多循环)
+#### 2.[LDC指令中因内存失效而产生的bug](#LDC指令)
 ---
       
 ## 三、猛男讲解
@@ -2205,7 +2207,31 @@ void CodeRunBase::funcALOAD1(JavaThread *javaThread, BytecodeStream *bytecodeStr
 ### (六)扩展内容
 
 ### (七)勘误
- 
+
+>错误commit：指含有错误的commit<br/>
+>修复commit：指修复错误的commit
+
+我尽量少写bug！
+
+**<p id="多循环">1. 解析常量池时多循环了一次：</p>**
+
+**错误commit :** 9a212900d255cda698780d96dafff43dc1152677
+<br/><br/>
+**修复commit :** a340887eaa2ef20cb609c3dd90dce7af54c8bb67
+<br/><br/>
+在解析"访问权限"小节顺带着修复了。
+<br/><br/>
+**<p id="LDC指令">2. LDC指令中因内存失效而产生的bug：</p>**
+
+**错误commit :** 03c113485ab72a91b6cd57f4da46fe2752f1614a
+<br/><br/>
+**修复commit :** 4763f3e13e6142dd6dd4f9e458f454e4989398b6
+<br/><br/>
+LDC指令中应将常量池中的值复制一份推向栈顶。
+<br/><br/>
+原错误做法：未重新申请内存，导致将某个方法的局部变量的首地址指针 推向了栈顶，方法结束后内存已经被释放掉了。
+<br/><br/>
+修复方法：用new关键字在堆（不是java的堆）中申请一块内存专门来存储复制后的值。
 
 
 
