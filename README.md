@@ -55,7 +55,7 @@
 ###### 4.2.4[putstatic指令的实现](#putstatic)
 ###### 4.2.5[ldc指令的实现](#ldc)
 ###### 4.2.6[dup指令的实现](#dup)
-###### 4.2.7[aload0指令的实现](#aload0)
+###### 4.2.7[aload0、aload1指令的实现](#aload0)
 #### 5.模版解释器 
 ### (三)内存池
 #### 1.Java进程总内存
@@ -2178,19 +2178,25 @@ void CodeRunBase::funcDUP(JavaThread *javaThread, BytecodeStream *bytecodeStream
 }
 ```
 
-**<p id="aload0">4.2.7 aload0指令的实现：</p>**
+**<p id="aload0">4.2.7 aload0、aload1指令的实现：</p>**
 
 **本次commit :** 0291888b07f318d53ee38e3a63282e1d4b49c1e2
 
 <br/>
 
 load相关的指令都是从局部变量表中获取一个变量，推向栈顶，这次我们要实现的aload0，其中a表示我们的要操作的数据类型为引用类型，0 表示局部变量表第一个数据，当然还有aload1、iload0……
-<br/><br/>于是我们这样来解释aload0指令：
+<br/><br/>于是我们这样来解释aload0、aload1指令：
 
 ```c++
 void CodeRunBase::funcALOAD0(JavaThread *javaThread, BytecodeStream *bytecodeStream , int& index) {
     printf("    **执行指令aload0\n");
     CommonValue *cv = javaThread->stack.top()->locals[0];//获取局部变量表第一个数据
+    javaThread->stack.top()->stack.push(cv); // 推向栈顶
+}
+
+void CodeRunBase::funcALOAD1(JavaThread *javaThread, BytecodeStream *bytecodeStream , int& index) {
+    printf("    **执行指令aload1\n");
+    CommonValue *cv = javaThread->stack.top()->locals[1];//获取局部变量表第一个数据
     javaThread->stack.top()->stack.push(cv); // 推向栈顶
 }
 ```

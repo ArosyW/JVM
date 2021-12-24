@@ -18,6 +18,7 @@ void CodeRunBase::initCodeRun(){
     run[LDC] = funcLDC;
     run[DUP] = funcDUP;
     run[ALOAD_0] = funcALOAD0;
+    run[ALOAD_1] = funcALOAD1;
 }
 void CodeRunBase::funcNOP(JavaThread *javaThread, BytecodeStream *bytecodeStream , int& index) {
 //nothing to do .
@@ -76,5 +77,11 @@ void CodeRunBase::funcDUP(JavaThread *javaThread, BytecodeStream *bytecodeStream
 void CodeRunBase::funcALOAD0(JavaThread *javaThread, BytecodeStream *bytecodeStream , int& index) {
     printf("    **执行指令aload0\n");
     CommonValue *cv = javaThread->stack.top()->locals[0];//获取局部变量表第一个数据
+    javaThread->stack.top()->stack.push(cv); // 推向栈顶
+}
+
+void CodeRunBase::funcALOAD1(JavaThread *javaThread, BytecodeStream *bytecodeStream , int& index) {
+    printf("    **执行指令aload1\n");
+    CommonValue *cv = javaThread->stack.top()->locals[1];//获取局部变量表第一个数据
     javaThread->stack.top()->stack.push(cv); // 推向栈顶
 }
