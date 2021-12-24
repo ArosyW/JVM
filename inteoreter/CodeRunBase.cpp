@@ -17,6 +17,7 @@ void CodeRunBase::initCodeRun(){
     run[PUTSTATIC] = funcPUTSTATIC;
     run[LDC] = funcLDC;
     run[DUP] = funcDUP;
+    run[ALOAD_0] = funcALOAD0;
 }
 void CodeRunBase::funcNOP(JavaThread *javaThread, BytecodeStream *bytecodeStream , int& index) {
 //nothing to do .
@@ -67,6 +68,13 @@ void CodeRunBase::funcICONST0(JavaThread *javaThread, BytecodeStream *bytecodeSt
 }
 
 void CodeRunBase::funcDUP(JavaThread *javaThread, BytecodeStream *bytecodeStream , int& index) {
+    printf("    **执行指令dup\n");
     CommonValue *cv = javaThread->stack.top()->stack.top(); //获取栈顶值
+    javaThread->stack.top()->stack.push(cv); // 推向栈顶
+}
+
+void CodeRunBase::funcALOAD0(JavaThread *javaThread, BytecodeStream *bytecodeStream , int& index) {
+    printf("    **执行指令aload0\n");
+    CommonValue *cv = javaThread->stack.top()->locals[0];//获取局部变量表第一个数据
     javaThread->stack.top()->stack.push(cv); // 推向栈顶
 }
