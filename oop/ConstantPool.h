@@ -19,6 +19,9 @@ public:
 
     string getStringFromPool(unsigned short index);
 
+    char* getAndNewFromPool(unsigned short index);
+
+
 };
 
 

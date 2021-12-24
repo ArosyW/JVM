@@ -29,7 +29,23 @@ string ConstantPool::getFieldName(unsigned short index){
     int t = nameAndType >> 16; // 取nameAndType的索引 的左16位
     return (data[t]); // 返回变量名
 };
-
+/**
+ * 根据JVM指令中的操作数 获取常量池中的一个字符串
+ * @param index
+ * @return
+ */
 string ConstantPool::getStringFromPool(unsigned short index){
+    return  (data[index]);
+};
+/**
+ * 根据JVM指令中的操作数 获取常量池中的一个字符串 并且 重新在堆中分配内存（复制一份）
+ * @param index
+ * @return
+ */
+char* ConstantPool::getAndNewFromPool(unsigned short index){
+    string temp = getStringFromPool(index);
+    char *res = new char[temp.length()];
+    temp.copy(res, temp.length(), 0);
+    res[temp.length()] = '\0';
     return  (data[index]);
 };

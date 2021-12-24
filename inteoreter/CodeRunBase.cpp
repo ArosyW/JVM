@@ -53,8 +53,8 @@ void CodeRunBase::funcLDC(JavaThread *javaThread, BytecodeStream *bytecodeStream
             break;
         case CONSTANT_String: {
             int index = *bytecodeStream->getBelongMethod()->getBelongKlass()->getConstantPool()->data[opera]; //从常量池获取索引
-            string str = bytecodeStream->getBelongMethod()->getBelongKlass()->getConstantPool()->getStringFromPool(index);//从常量池获取string的内容
-            javaThread->stack.top()->stack.push(new CommonValue(T_OBJECT, (char *)str.c_str()));//入栈
+            char* str = bytecodeStream->getBelongMethod()->getBelongKlass()->getConstantPool()->getAndNewFromPool(index);//从常量池获取string的内容
+            javaThread->stack.top()->stack.push(new CommonValue(T_OBJECT, str));//入栈
             break;
         }
         case CONSTANT_Class:
