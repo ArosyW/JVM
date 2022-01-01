@@ -56,6 +56,7 @@
 ###### 4.2.5[ldc指令的实现](#ldc)
 ###### 4.2.6[dup指令的实现](#dup)
 ###### 4.2.7[aload0、aload1指令的实现](#aload0)
+###### 4.2.8[new指令的实现](#new)
 #### 5.模版解释器 
 ### (三)内存池
 #### 1.Java进程总内存
@@ -2201,6 +2202,87 @@ void CodeRunBase::funcALOAD1(JavaThread *javaThread, BytecodeStream *bytecodeStr
     CommonValue *cv = javaThread->stack.top()->locals[1];//获取局部变量表第一个数据
     javaThread->stack.top()->stack.push(cv); // 推向栈顶
 }
+```
+
+**<p id="new">4.2.8 new指令的实现：</p>**
+
+**本次commit :** 
+
+<br/>
+
+new指令格式：
+
+| name  | 操作码  | 操作数
+| ----  | ----  | ----  |
+|    new |  1字节 | 2字节 |
+
+我们每次new对象都会有这个指令的执行，这个指令2字节大小的操作数是Class常量池索引，通过这个索引我们可以拿到一个Java类的名字（全限定名）。
+
+那么这个指令的实现逻辑就是将这个Java类实例化（创建对象）。
+
+既然需要创建对象，那么一定要先用C++把对象表示出来。
+
+之前讲到所有的Java类在JVM中都会有一个Klass"一一对应"，于是我们新建了C++类InstanceKlass来表示Java类。
+
+大家都知道，在写Java代码时可以通过一个Java类new出很多对象，事实上，在JVM中我们也需要一个C++类来表示Java对象：InstanceOop
+
+InstanceOop应该有哪些属性？
+
+* 为了将一个Java对象与实例化它的Java类关联起来，显然InstanceOop中应该有指向所属Java类的指针。
+
+* 每创建一个对象，Java类的非静态成员属性就会被复制一份，让这个属性专属于对象，显然InstanceOop中应该有所属Java类的成员属性。
+
+>事实上，在成熟的JVM中还会有对象头等信息，对象头里面存储了例如锁等相关的信息，但鉴于我们的JVM暂不需要，为了快速实现，我们就不加对象头了，不排除后面用到再补。
+
+于是我们新建InstanceOop：
+
+```c++
+
+class InstanceOop {
+    InstanceKlass *klass;//所属类
+
+    map<string, char *> map;//实例化的成员属性
+};
+
+```
+
+那么应该如何创建一个对象呢？
+
+在Hotspot中，创建一个对象的步骤是较为繁多的，
+* 计算这个对象所需要的（内存对齐后的）内存大小
+* 分配内存空间
+* 初始化所属类等信息
+* 执行类的构造方法
+
+内存对齐、内存分配 等内存相关的内容我们会第三部分（超链接）讲，所以此处我们伪实现一个即可。
+
+在InstanceKlass中新建allocateInstance方法专门用来实例化对象：
+
+```c++
+
+InstanceOop* InstanceKlass::allocateInstance(InstanceKlass* klass) {
+    InstanceOop *oop = new InstanceOop;
+    oop->klass = klass;
+    return oop;
+}
+
+```
+
+你会发现我们并没有执行构造方法，因为执行构造方法并不在new指令中完成，而是会在new指令之后，通过 invokespecial 指令实现构造方法的调用。
+
+我们先来实现new指令：
+
+```c++
+
+void CodeRunBase::funcNEW(JavaThread *javaThread, BytecodeStream *bytecodeStream, int &index) {
+    printf("    **执行指令NEW\n");
+    unsigned short opera = bytecodeStream->readByTwo(index);
+    string classPath = bytecodeStream->getBelongMethod()->getBelongKlass()->getConstantPool()->getClassPath(opera);
+    InstanceKlass *klass = BootClassLoader::loadKlass(classPath);
+    InstanceOop *oop = InstanceKlass::allocateInstance(klass);
+    javaThread->stack.top()->stack.push(new CommonValue(T_NARROWOOP, (char *) oop));
+}
+
 ```
 
 

@@ -3,6 +3,7 @@
 //
 
 #include "InstanceKlass.h"
+#include "InstanceOop.h"
 
 int InstanceKlass::getMagic() const {
     return magic;
@@ -130,4 +131,11 @@ AttributeInfo *InstanceKlass::getAttributeInfo() const {
 
 void InstanceKlass::setAttributeInfo(AttributeInfo *attributeInfo) {
     InstanceKlass::attributeInfo = attributeInfo;
+}
+
+InstanceOop* InstanceKlass::allocateInstance(InstanceKlass* klass) {
+    InstanceOop *oop = new InstanceOop;
+    oop->klass = klass;
+    //todo:对象头，申请内存等
+    return oop;
 }

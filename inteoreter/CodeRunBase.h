@@ -22,7 +22,7 @@ public:
     static void funcDUP(JavaThread *javaThread, BytecodeStream *bytecodeStream , int& index);
     static void funcALOAD0(JavaThread *javaThread, BytecodeStream *bytecodeStream , int& index);
     static void funcALOAD1(JavaThread *javaThread, BytecodeStream *bytecodeStream , int& index);
-
+    static void funcNEW(JavaThread *javaThread, BytecodeStream *bytecodeStream , int& index);
 };
 
 

@@ -12,6 +12,8 @@
 #include "AttributeInfo.h"
 #include "../runtime/CommonValue.h"
 
+extern class InstanceOop;
+
 class InstanceKlass {
     int magic; //魔数，CAFEBABE:用来校验是否是.class文件
     short minorVersion; //JDK次版本号
@@ -30,12 +32,17 @@ class InstanceKlass {
     short attributeCount;//属性数量
     AttributeInfo *attributeInfo;//属性
 public:
-    map<string, CommonValue*> staticValue; //静态变量
+    map<string, CommonValue *> staticValue; //静态变量
+
+/**
+   * 创建对象的方法
+*/
+    static InstanceOop *allocateInstance(InstanceKlass *klass);
 
 /**
    * 以下为getter && setter && 构造方法
 */
-public:
+
     short getAttributeCount() const;
 
     void setAttributeCount(short attributeCount);

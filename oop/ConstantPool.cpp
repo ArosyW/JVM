@@ -49,3 +49,12 @@ char* ConstantPool::getAndNewFromPool(unsigned short index){
     res[temp.length()] = '\0';
     return  (data[index]);
 };
+/**
+ * 根据JVM指令中的操作数 获取常量池中类的全限定名
+ * @param index
+ * @return
+ */
+string ConstantPool::getClassPath(unsigned short index){
+    int ind = *(data[index]);
+    return data[ind];
+};

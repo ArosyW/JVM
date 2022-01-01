@@ -21,6 +21,8 @@ public:
 
     char* getAndNewFromPool(unsigned short index);
 
+    string getClassPath(unsigned short index);
+
 
 };
 
