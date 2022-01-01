@@ -2206,7 +2206,7 @@ void CodeRunBase::funcALOAD1(JavaThread *javaThread, BytecodeStream *bytecodeStr
 
 **<p id="new">4.2.8 new指令的实现：</p>**
 
-**本次commit :** 
+**本次commit :** 88cbc04665c1a22e84f93a47a73a15b414755ca9
 
 <br/>
 
@@ -2218,7 +2218,7 @@ new指令格式：
 
 我们每次new对象都会有这个指令的执行，这个指令2字节大小的操作数是Class常量池索引，通过这个索引我们可以拿到一个Java类的名字（全限定名）。
 
-那么这个指令的实现逻辑就是将这个Java类实例化（创建对象）。
+**那么这个指令的实现逻辑就是将这个Java类实例化（创建对象）,然后将这个对象push入栈。**
 
 既然需要创建对象，那么一定要先用C++把对象表示出来。
 
