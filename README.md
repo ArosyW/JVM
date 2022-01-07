@@ -2287,7 +2287,7 @@ void CodeRunBase::funcNEW(JavaThread *javaThread, BytecodeStream *bytecodeStream
 ```
 **<p id="invokevirtual">4.2.9 invokevirtual指令的实现：</p>**
 
-**本次commit :** 
+**本次commit :** edeb60b3bb8f6ad295ed217e3441189b88c8eb0e
 
 
 JVM调用方法的指令主要有四个invokevirtual、invokeinterface、invokespecial、invokestatic。
