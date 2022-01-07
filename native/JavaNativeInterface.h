@@ -25,6 +25,12 @@ public:
      * @param method
      */
     static void callStaticMethod(JavaThread* javaThread,MethodInfo *method);
+/**
+     * invokevirtual 用来调用Java方法
+     * @param javaThread
+     * @param method
+     */
+    static void callVirtual(JavaThread *javaThread, MethodInfo *method, int paramCount, char **params);
 };
 
 

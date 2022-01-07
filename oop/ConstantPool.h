@@ -23,6 +23,11 @@ public:
 
     string getClassPath(unsigned short index);
 
+    string getMethodNameByMethodInfo(unsigned short index);
+
+    string getDescriptorNameByMethodInfo(unsigned short index);
+
+    string getClassNameByMethodInfo(unsigned short index);
 
 };
 

@@ -7,6 +7,7 @@
 #include "../classFile/BootClassLoader.h"
 #include "ByteType.h"
 #include "../util/BasicType.h"
+#include "../native/JavaNativeInterface.h"
 
 typedef void (*CODERUN)(JavaThread *javaThread, BytecodeStream *bytecodeStream, int &index);
 
@@ -22,6 +23,7 @@ void CodeRunBase::initCodeRun() {
     run[ALOAD_0] = funcALOAD0;
     run[ALOAD_1] = funcALOAD1;
     run[NEW] = funcNEW;
+    run[INVOKEVIRTUAL] = funcINVOKEVIRTUAL;
 }
 
 void CodeRunBase::funcNOP(JavaThread *javaThread, BytecodeStream *bytecodeStream, int &index) {
@@ -107,4 +109,35 @@ void CodeRunBase::funcNEW(JavaThread *javaThread, BytecodeStream *bytecodeStream
     InstanceKlass *klass = BootClassLoader::loadKlass(classPath);
     InstanceOop *oop = InstanceKlass::allocateInstance(klass);
     javaThread->stack.top()->stack.push(new CommonValue(T_NARROWOOP, (char *) oop));
+}
+
+void CodeRunBase::funcINVOKEVIRTUAL(JavaThread *javaThread, BytecodeStream *bytecodeStream, int &index) {
+    printf("    **执行指令INVOKEVIRTUAL\n");
+    unsigned short opera = bytecodeStream->readByTwo(index);
+    string className = bytecodeStream->getBelongMethod()->getBelongKlass()->getConstantPool()->getClassNameByMethodInfo(opera);//获取类名
+    string methodName = bytecodeStream->getBelongMethod()->getBelongKlass()->getConstantPool()->getMethodNameByMethodInfo(opera);//获取方法名
+    string descName = bytecodeStream->getBelongMethod()->getBelongKlass()->getConstantPool()->getDescriptorNameByMethodInfo(opera);//获取方法描述
+    printf("\tclassName:%s,methodName:%s,descName:%s\n", className.c_str(), methodName.c_str(),
+           descName.c_str());
+    int paramCount =0 ;//初始化参数数量
+    char **params = CodeRunBase::getParams(descName, javaThread->stack.top(),paramCount);//解析参数
+    InstanceKlass *klass = BootClassLoader::loadKlass(className);//获取类全限定名
+    MethodInfo *m = JavaNativeInterface::getMethod(klass, methodName, descName);//根据方法名字和方法描述找到要调用的方法
+    JavaNativeInterface::callVirtual(javaThread, m, paramCount, params);//调用方法
+}
+
+char** CodeRunBase::getParams(string descriptor, JavaVFrame *jf,int & paramCount) {
+    int start = descriptor.find("(");
+    int end = descriptor.find(")");
+    string paramStr = descriptor.substr(start + 1, end - 1);
+    char *split = std::strtok(const_cast<char *>(paramStr.data()), ";");
+    while (split != NULL) {
+        paramCount++;
+        split = std::strtok(NULL, ";");
+    }
+    char **res = reinterpret_cast<char **>(new char[paramCount+1]);//非静态方法的第一个参数用于是this指针，因此多申请一个内存
+    for (int i = 0; i <= paramCount; i++) {
+        *(res + i) = (char *) jf->pop();
+    }
+    return res;
 }

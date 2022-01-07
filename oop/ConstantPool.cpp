@@ -58,3 +58,35 @@ string ConstantPool::getClassPath(unsigned short index){
     int ind = *(data[index]);
     return data[ind];
 };
+/**
+ * 根据JVM指令中的操作数 获取常量池中方法的名字
+ * @param index
+ * @return
+ */
+string ConstantPool::getMethodNameByMethodInfo(unsigned short index){
+    int i = htonl(*(int *)data[index]);
+    int nameAndTypeIndex = i & 0xff;
+    int d = htonl(*(int *)data[nameAndTypeIndex]);
+    i = d >> 16;
+    return (data[i]);
+};
+/**
+ * 根据JVM指令中的操作数 获取常量池中方法的描述（参数与返回值的描述）
+ * @param index
+ * @return
+ */
+string ConstantPool::getDescriptorNameByMethodInfo(unsigned short index){
+    int i = htonl(*(int *)data[index]);
+    int nameAndTypeIndex = i & 0xff;
+    int d = htonl(*(int *)data[nameAndTypeIndex]);
+    i = d & 0xff;
+    return (data[i]);
+};
+/**
+ * 根据JVM指令中的操作数 获取常量池中类的全限定名
+ * @param index
+ * @return
+ */
+string ConstantPool::getClassNameByMethodInfo(unsigned short index) {
+    return getClassNameByFieldInfo(index);
+}

@@ -57,6 +57,7 @@
 ###### 4.2.6[dup指令的实现](#dup)
 ###### 4.2.7[aload0、aload1指令的实现](#aload0)
 ###### 4.2.8[new指令的实现](#new)
+###### 4.2.8[invokevirtual指令的实现](#invokevirtual)
 #### 5.模版解释器 
 ### (三)内存池
 #### 1.Java进程总内存
@@ -2284,6 +2285,108 @@ void CodeRunBase::funcNEW(JavaThread *javaThread, BytecodeStream *bytecodeStream
 }
 
 ```
+**<p id="invokevirtual">4.2.9 invokevirtual指令的实现：</p>**
+
+**本次commit :** 
+
+
+JVM调用方法的指令主要有四个invokevirtual、invokeinterface、invokespecial、invokestatic。
+
+>第五个：invokedynamic
+
+* invokestatic ： 调用类的静态方法
+* invokespecial ： 调用特殊方法，例如构造方法、私有方法、父类方法、本地方法。
+* invokevirtual ：调用对象能够调用的实例方法。
+* invokeinterface ： 调用接口方法，需要搜索并找到合适的方法实现，然后调用。
+
+这里我先来实现invokevirtual方法，下面给出它的指令格式：
+
+
+| name  | 操作码  | 操作数
+| ----  | ----  | ----  |
+|    invokevirtual |  1字节 | 2字节 |
+
+<br/>
+
+根据这2个字节的操作数，根据它可以从Class常量池中获取到需要调用的方法的Java类名、方法名字、方法描述。
+其中Java类名、方法名字很好理解，重点说一下'方法描述'，它描述了这个方法的参数与返回值（包括类型与数量），必须举一个栗子🌰：
+
+
+(Ljava/lang/String;)V
+
+假如一个方法的描述是上面这个字符串，那么括号里面的即为参数，括号外面的 V 即为返回值，也就是指返回值为void。
+
+再来看括号里面的参数，每个参数之间用 '；' 分隔（除基本类型的数组外），显然我们只有一个参数，开头的L表示这个参数的类型为某个Object，也就是java/lang/String这个类型。
+
+于是我们可以把这个'方法描述'理解为：
+
+| 参数数量  | 入参数  | 返回值
+| ----  | ----  | ----  |
+|    1 |  String | void |
+
+这里再给出'方法描述'中的其他部分符号的含义：
+
+| 符号  | Java含义 
+| ----  | ----  | 
+|    Z |  Boolean | 
+|    B |  Byte | 
+|    C |  Char | 
+|    S |  Short | 
+|    I |  Int | 
+|    J |  Long | 
+|    F |  Float | 
+|    D |  Double | 
+|    V |  Void | 
+|    [ |  数组 | 
+
+考虑到篇幅，更详细的规则不再给出，你只需要知道从'方法描述'中我们可以解析出这个方法的参数与返回值即可。当你真的用到更多的规则时再查阅更多的资料吧。
+
+[3.4方法执行理论示例](#方法执行理论示例)  下面的实现逻辑与这一章节有很大的关系，忘记了的记得复习一下。
+
+先简要列出一下invokevirtual的实现逻辑：
+
+* 根据操作数从Class常量池中获取到需要调用的方法的Java类名、方法名字、方法描述
+* 解析方法入参出参、方法数量
+* 创建 "被调用者方法的栈帧frame"
+* 将需要的参数写入 "调用者方法的栈帧frame的局部变量表"
+* 执行 "被调用者方法"
+
+还记得我们如何调用的main方法吗，我们写了一个callStaticMethod 方法专门调用static方法，现在我们在来写一个专门给invokevirtual指令使用的callVirtual：
+```c++
+void JavaNativeInterface::callVirtual(JavaThread* javaThread, MethodInfo *method,int paramCount ,char** params) {
+    printf("===============执行方法开始 :%s =================\n", method->getMethodName().c_str());
+    JavaVFrame *javaVFrame = new JavaVFrame;//马上要执行方法了，先创建栈帧
+    for (int i = 1; i <= paramCount; ++i) { //将参数写入局部变量表
+        javaVFrame->locals[i] = (CommonValue *) (*(params + i - 1));
+    }
+    javaVFrame->locals[0] = (CommonValue *)*(params + paramCount);//非静态方法第一个参数为this指针
+    javaThread->stack.push(javaVFrame);//栈帧push进线程的栈空间
+    BytecodeInterpreter::run(javaThread, method); // 执行方法
+    javaThread->stack.pop();//将执行完成的栈桢弹出栈空间
+    delete javaVFrame; //释放栈桢内存空间
+}
+```
+那么我们的invokevirtual指令的实现逻辑只需要把callVirtual需要的参数准备好就可以了：
+
+```c++
+
+void CodeRunBase::funcINVOKEVIRTUAL(JavaThread *javaThread, BytecodeStream *bytecodeStream, int &index) {
+    printf("    **执行指令INVOKEVIRTUAL\n");
+    unsigned short opera = bytecodeStream->readByTwo(index);
+    string className = bytecodeStream->getBelongMethod()->getBelongKlass()->getConstantPool()->getClassNameByMethodInfo(opera);//获取类名
+    string methodName = bytecodeStream->getBelongMethod()->getBelongKlass()->getConstantPool()->getMethodNameByMethodInfo(opera);//获取方法名
+    string descName = bytecodeStream->getBelongMethod()->getBelongKlass()->getConstantPool()->getDescriptorNameByMethodInfo(opera);//获取方法描述
+    printf("\tclassName:%s,methodName:%s,descName:%s\n", className.c_str(), methodName.c_str(),
+           descName.c_str());
+    int paramCount =0 ;//初始化参数数量
+    char **params = CodeRunBase::getParams(descName, javaThread->stack.top(),paramCount);//解析参数
+    InstanceKlass *klass = BootClassLoader::loadKlass(className);//获取类全限定名
+    MethodInfo *m = JavaNativeInterface::getMethod(klass, methodName, descName);//根据方法名字和方法描述找到要调用的方法
+    JavaNativeInterface::callVirtual(javaThread, m, paramCount, params);//调用方法
+}
+```
+
+
 
 
 ### (六)扩展内容
