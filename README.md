@@ -2439,7 +2439,7 @@ JavaNativeInterface::callSpecial(javaThread, m, paramCount, params);//调用方�
 
 **<p id="本地方法">4.2.11 本地方法的调用：</p>**
 
-**本次commit :** 
+**本次commit :** 1075a48dfea564e08beecc7b693abaf2713e0b3f
 
 
 Java虚拟机规范并没有规定本地方法调用的实现必须怎样，所以我们是自由的。这里我们用一个map把所有的本地方法存放起来，key即为方法名字，value为方法的实现，在JVM启动时初始化并填充这个map，
