@@ -30,12 +30,13 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="5bcc33db-55b5-4b9a-b47c-e1d54bcdc620" name="Default Changelist" comment="UPDATE README">
+      <change afterPath="$PROJECT_DIR$/inteoreter/CodeRunNative.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/inteoreter/CodeRunNative.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/inteoreter/CodeRunBase.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/inteoreter/CodeRunBase.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/inteoreter/CodeRunBase.h" beforeDir="false" afterPath="$PROJECT_DIR$/inteoreter/CodeRunBase.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/native/JavaNativeInterface.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/native/JavaNativeInterface.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/native/JavaNativeInterface.h" beforeDir="false" afterPath="$PROJECT_DIR$/native/JavaNativeInterface.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/main.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -84,6 +85,11 @@
     </key>
   </component>
   <component name="RunManager">
+    <configuration default="true" type="CLionExternalRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true">
+      <method v="2">
+        <option name="CLION.EXTERNAL.BUILD" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="JVM" type="CMakeRunConfiguration" factoryName="Application" temporary="true" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JVM" TARGET_NAME="JVM" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="JVM" RUN_TARGET_NAME="JVM">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
@@ -119,7 +125,7 @@
       <workItem from="1640933656056" duration="1551000" />
       <workItem from="1641060452560" duration="4502000" />
       <workItem from="1641560464098" duration="9668000" />
-      <workItem from="1642168858489" duration="3536000" />
+      <workItem from="1642168858489" duration="7469000" />
     </task>
     <task id="LOCAL-00001" summary="解析常量池">
       <created>1637571501512</created>

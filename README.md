@@ -59,6 +59,7 @@
 ###### 4.2.8[new指令的实现](#new)
 ###### 4.2.9[invokevirtual指令的实现](#invokevirtual)
 ###### 4.2.10[invokespecial指令的实现](#invokespecial)
+###### 4.2.11[本地方法的调用](#本地方法)
 #### 5.模版解释器 
 ### (三)内存池
 #### 1.Java进程总内存
@@ -2429,13 +2430,95 @@ void CodeRunBase::funcINVOKESPECIAL(JavaThread *javaThread, BytecodeStream *byte
     descName.c_str());
     int paramCount =0 ;//初始化参数数量
     char **params = CodeRunBase::getParams(descName, javaThread->stack.top(),paramCount);//解析参数
-     // todo 如果是本地方法则调用本地方法
     InstanceKlass *klass = BootClassLoader::loadKlass(className);//获取类全限定名
     MethodInfo *m = JavaNativeInterface::getMethod(klass, methodName, descName);//根据方法名字和方法描述找到要调用的方法
-    JavaNativeInterface::callSpecial(javaThread, m, paramCount, params);//调用方法
+    // todo 如果是本地方法则调用本地方法
+JavaNativeInterface::callSpecial(javaThread, m, paramCount, params);//调用方法
 }
 ```
 
+**<p id="本地方法">4.2.11 本地方法的调用：</p>**
+
+**本次commit :** 
+
+
+Java虚拟机规范并没有规定本地方法调用的实现必须怎样，所以我们是自由的。这里我们用一个map把所有的本地方法存放起来，key即为方法名字，value为方法的实现，在JVM启动时初始化并填充这个map，
+于是我们新建C++类CodeRunNative来存放本地方法：
+```c++
+typedef void (*CODENATIVE)(int paramsCount, char **params);
+
+class CodeRunNative {
+public:
+    static void initCodeRun();
+    static map<string, CODENATIVE> map;
+};
+```
+其中CODENATIVE是一个函数指针，你可以理解在填充map时可以将它指向方法的实现。
+
+其中initCodeRun则是我们在JVM启动时调用的，它会填充我们的map，将本地方法的实现全部put进去。
+
+假如我们有一个本地方法叫做 writeBytes ，那么我们可以这样来填充：
+
+```c++
+void CodeRunNative::initCodeRun() {
+    map["writeBytes"] = writeBytes;
+}
+
+void CodeRunNative::writeBytes(int paramsCount, char **params) {
+    //todo 本地方法的实现
+};
+
+```
+
+那么我们可以补充一下invokespecial指令未实现的本地方法的逻辑了，就像如何把大象装进冰箱一样简单，这里我们只需要两步：
+
+* 判断出这是一个本地方法
+* 调用这个本地方法
+
+先说如何判断出这是一个本地方法，之前我们在解析字节码文件的时候， 解析“方法”时将这个方法的访问权限存放在了MethodInfo->accessFlags中，再贴一下这个属性的含义：
+
+| 标志  | 二进制值  | 
+| ----  | ----  | 
+|    public |  0000000000001 | 
+|    private |  0000000000010 | 
+|    protected |  0000000000100 | 
+|    static |  0000000001000 | 
+|    final |  0000000010000 | 
+|    synchronized |  0000000100000 | 
+|    bridge |  0000001000000 | 
+|    varargs |  0000010000000 | 
+|    native |  0000100000000 | 
+|    abstract |  0010000000000 | 
+|    strict |  0100000000000 | 
+|    synthetic |  1000000000000 | 
+
+那么只需要位运算一下 （ accessFlags&100000000 == 100000000 ） 就可以判断出这个方法是native方法。
+
+我们来完善一下invokespecial指令本地方法的调用：
+
+```c++
+
+void CodeRunBase::funcINVOKESPECIAL(JavaThread *javaThread, BytecodeStream *bytecodeStream, int &index) {
+    printf("    **执行指令INVOKESPECIAL\n");
+    unsigned short opera = bytecodeStream->readByTwo(index);
+    string className = bytecodeStream->getBelongMethod()->getBelongKlass()->getConstantPool()->getClassNameByMethodInfo(opera);//获取类名
+    string methodName = bytecodeStream->getBelongMethod()->getBelongKlass()->getConstantPool()->getMethodNameByMethodInfo(opera);//获取方法名
+    string descName = bytecodeStream->getBelongMethod()->getBelongKlass()->getConstantPool()->getDescriptorNameByMethodInfo(opera);//获取方法描述
+    printf("\tclassName:%s,methodName:%s,descName:%s\n", className.c_str(), methodName.c_str(),
+           descName.c_str());
+    int paramCount =0 ;//初始化参数数量
+    char **params = CodeRunBase::getParams(descName, javaThread->stack.top(),paramCount);//解析参数
+    InstanceKlass *klass = BootClassLoader::loadKlass(className);//获取类全限定名
+    MethodInfo *m = JavaNativeInterface::getMethod(klass, methodName, descName);//根据方法名字和方法描述找到要调用的方法
+    if (m->getAccessFlags() & 100000000 == 0x0100) {//判断是否是本地方法
+        FUNNATIVE nativeFunc = (FUNNATIVE) CodeRunNative::map[m->getMethodName()]; //取出本地方法
+        nativeFunc(paramCount,params);//调用本地方法
+        return;
+    }
+    JavaNativeInterface::callSpecial(javaThread, m, paramCount, params);//调用方法
+}
+
+```
 
 
 ### (六)扩展内容

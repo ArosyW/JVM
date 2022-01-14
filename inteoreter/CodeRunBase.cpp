@@ -8,6 +8,9 @@
 #include "ByteType.h"
 #include "../util/BasicType.h"
 #include "../native/JavaNativeInterface.h"
+#include "CodeRunNative.h"
+
+typedef void (*FUNNATIVE)(int paramsCount, char **params);
 
 typedef void (*CODERUN)(JavaThread *javaThread, BytecodeStream *bytecodeStream, int &index);
 
@@ -137,9 +140,13 @@ void CodeRunBase::funcINVOKESPECIAL(JavaThread *javaThread, BytecodeStream *byte
            descName.c_str());
     int paramCount =0 ;//初始化参数数量
     char **params = CodeRunBase::getParams(descName, javaThread->stack.top(),paramCount);//解析参数
-    //todo 如果是本地方法则调用本地方法
     InstanceKlass *klass = BootClassLoader::loadKlass(className);//获取类全限定名
     MethodInfo *m = JavaNativeInterface::getMethod(klass, methodName, descName);//根据方法名字和方法描述找到要调用的方法
+    if (m->getAccessFlags() & 100000000 == 0x0100) {//判断是否是本地方法
+        FUNNATIVE nativeFunc = (FUNNATIVE) CodeRunNative::map[m->getMethodName()]; //取出本地方法
+        nativeFunc(paramCount,params);//调用本地方法
+        return;
+    }
     JavaNativeInterface::callSpecial(javaThread, m, paramCount, params);//调用方法
 }
 

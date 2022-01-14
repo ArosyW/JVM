@@ -1,10 +1,11 @@
 #include "Stream/ClassRead.h"
-#include "classFile/ClassFileParser.h"
 #include "oop/InstanceKlass.h"
 #include "classFile/BootClassLoader.h"
 #include "runtime/JavaThread.h"
 #include "native/JavaNativeInterface.h"
 #include "inteoreter/CodeRunBase.h"
+#include "inteoreter/CodeRunNative.h"
+
 
 using namespace std;
 
@@ -21,4 +22,5 @@ int main() {
 }
 void startVM(){
     CodeRunBase::initCodeRun();//初始化字节码解释器，把解析JVM指令的方法全部存入map,以便使用
+    CodeRunNative::initCodeRun();//初始化本地方法，把本地方法全部存入map,以便使用
 };
