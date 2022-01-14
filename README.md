@@ -2388,7 +2388,7 @@ void CodeRunBase::funcINVOKEVIRTUAL(JavaThread *javaThread, BytecodeStream *byte
 ```
 **<p id="invokespecial">4.2.10 invokespecial指令的实现：</p>**
 
-**本次commit :** 
+**本次commit :** 9c397b1f49fda967c59f1ca80797b1084c7868c3
 
 invokespecial 主要用来调用特殊方法，例如构造方法、私有方法、父类方法、本地方法。我们这里用到了构造方法和本地方法，所以我们优先来实现这两个方法的调用逻辑。
 
