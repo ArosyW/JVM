@@ -18,6 +18,7 @@ CODERUN CodeRunBase::run[256];
 
 void CodeRunBase::initCodeRun() {
     run[NOP] = funcNOP; // NOP枚举值为0
+    run[RETURN] = funcRETURN;
     run[GETSTATIC] = funcGETSTATIC;
     run[ICONST_0] = funcICONST0;
     run[PUTSTATIC] = funcPUTSTATIC;
@@ -32,6 +33,11 @@ void CodeRunBase::initCodeRun() {
 
 void CodeRunBase::funcNOP(JavaThread *javaThread, BytecodeStream *bytecodeStream, int &index) {
 //nothing to do .
+}
+
+void CodeRunBase::funcRETURN(JavaThread *javaThread, BytecodeStream *bytecodeStream, int &index) {
+//nothing to do .
+    printf("    **执行指令RETURN\n");
 }
 
 void CodeRunBase::funcGETSTATIC(JavaThread *javaThread, BytecodeStream *bytecodeStream, int &index) {

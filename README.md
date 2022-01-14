@@ -60,6 +60,7 @@
 ###### 4.2.9[invokevirtual指令的实现](#invokevirtual)
 ###### 4.2.10[invokespecial指令的实现](#invokespecial)
 ###### 4.2.11[本地方法的调用](#本地方法)
+###### 4.2.12[return指令的实现](#return)
 #### 5.模版解释器 
 ### (三)内存池
 #### 1.Java进程总内存
@@ -2519,6 +2520,40 @@ void CodeRunBase::funcINVOKESPECIAL(JavaThread *javaThread, BytecodeStream *byte
 }
 
 ```
+
+**<p id="return">4.2.12 return指令的实现：</p>**
+
+**本次commit :** 
+
+编译器会给每一个Java方法生成一个return系列的指令，即使返回值为void，即使你并没有显式的将"return"写出，在方法结束时仍然会有return相关的指令，下面给出return相关的指令以及含义：
+
+| 指令  | 含义  |
+| ----  | ----  |
+|    ireturn |  返回一个int类型的数据 |
+|    lreturn |  返回一个long类型的数据 |
+|    freturn |  返回一个float类型的数据 |
+|    dreturn |  返回一个double类型的数据 |
+|    areturn |  返回一个引用类型的数据 |
+|    return |  啥也不返回（void） |
+
+用ireturn举例，其实现逻辑为：
+
+* 弹出当前方法的栈顶元素
+* 将其push进 当前方法的调用者的栈顶
+
+由于我们的字节码解释器并没有保存调用者的栈地址，因此就不实现ireturn了，直接实现return就足够现阶段的我们使用了，return指令什么都不需要做：
+
+```c++
+
+void CodeRunBase::funcRETURN(JavaThread *javaThread, BytecodeStream *bytecodeStream, int &index) {
+//nothing to do .
+    printf("    **执行指令RETURN\n");
+}
+
+```
+
+>模版解释器才是JVM的精髓所在，所以在模版解释器我们一定会做保存调用者栈基地址这些操作。
+
 
 
 ### (六)扩展内容
