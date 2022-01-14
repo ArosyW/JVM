@@ -57,7 +57,8 @@
 ###### 4.2.6[dup指令的实现](#dup)
 ###### 4.2.7[aload0、aload1指令的实现](#aload0)
 ###### 4.2.8[new指令的实现](#new)
-###### 4.2.8[invokevirtual指令的实现](#invokevirtual)
+###### 4.2.9[invokevirtual指令的实现](#invokevirtual)
+###### 4.2.10[invokespecial指令的实现](#invokespecial)
 #### 5.模版解释器 
 ### (三)内存池
 #### 1.Java进程总内存
@@ -2385,7 +2386,55 @@ void CodeRunBase::funcINVOKEVIRTUAL(JavaThread *javaThread, BytecodeStream *byte
     JavaNativeInterface::callVirtual(javaThread, m, paramCount, params);//调用方法
 }
 ```
+**<p id="invokespecial">4.2.10 invokespecial指令的实现：</p>**
 
+**本次commit :** 
+
+invokespecial 主要用来调用特殊方法，例如构造方法、私有方法、父类方法、本地方法。我们这里用到了构造方法和本地方法，所以我们优先来实现这两个方法的调用逻辑。
+
+首先它的指令格式与invokevirtual完全一样：
+
+| name  | 操作码  | 操作数
+| ----  | ----  | ----  |
+|    invokespecial |  1字节 | 2字节 |
+
+<br/>
+
+实现逻辑也与invokevirtual类似（认真看一下上一小节invokevirtual的实现，这里不细展开了），只不过要单独处理一下本地方法的调用（我们在下一小节再实现本地方法）：
+
+```c++
+void JavaNativeInterface::callSpecial(JavaThread* javaThread, MethodInfo *method,int paramCount ,char** params) {
+    printf("===============执行方法开始 :%s =================\n", method->getMethodName().c_str());
+    JavaVFrame *javaVFrame = new JavaVFrame;//马上要执行方法了，先创建栈帧
+    for (int i = 1; i <= paramCount; ++i) { //将参数写入局部变量表
+        javaVFrame->locals[i] = (CommonValue *) (*(params + i - 1));
+    }
+    javaVFrame->locals[0] = (CommonValue *)*(params + paramCount);//非静态方法第一个参数为this指针
+    javaThread->stack.push(javaVFrame);//栈帧push进线程的栈空间
+    BytecodeInterpreter::run(javaThread, method); // 执行方法
+    javaThread->stack.pop();//将执行完成的栈桢弹出栈空间
+    delete javaVFrame; //释放栈桢内存空间
+}
+```
+
+```c++
+
+void CodeRunBase::funcINVOKESPECIAL(JavaThread *javaThread, BytecodeStream *bytecodeStream, int &index) {
+    printf("    **执行指令INVOKESPECIAL\n");
+    unsigned short opera = bytecodeStream->readByTwo(index);
+    string className = bytecodeStream->getBelongMethod()->getBelongKlass()->getConstantPool()->getClassNameByMethodInfo(opera);//获取类名
+    string methodName = bytecodeStream->getBelongMethod()->getBelongKlass()->getConstantPool()->getMethodNameByMethodInfo(opera);//获取方法名
+    string descName = bytecodeStream->getBelongMethod()->getBelongKlass()->getConstantPool()->getDescriptorNameByMethodInfo(opera);//获取方法描述
+    printf("\tclassName:%s,methodName:%s,descName:%s\n", className.c_str(), methodName.c_str(),
+    descName.c_str());
+    int paramCount =0 ;//初始化参数数量
+    char **params = CodeRunBase::getParams(descName, javaThread->stack.top(),paramCount);//解析参数
+     // todo 如果是本地方法则调用本地方法
+    InstanceKlass *klass = BootClassLoader::loadKlass(className);//获取类全限定名
+    MethodInfo *m = JavaNativeInterface::getMethod(klass, methodName, descName);//根据方法名字和方法描述找到要调用的方法
+    JavaNativeInterface::callSpecial(javaThread, m, paramCount, params);//调用方法
+}
+```
 
 
 

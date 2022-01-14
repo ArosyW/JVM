@@ -24,6 +24,7 @@ void CodeRunBase::initCodeRun() {
     run[ALOAD_1] = funcALOAD1;
     run[NEW] = funcNEW;
     run[INVOKEVIRTUAL] = funcINVOKEVIRTUAL;
+    run[INVOKESPECIAL] = funcINVOKESPECIAL;
 }
 
 void CodeRunBase::funcNOP(JavaThread *javaThread, BytecodeStream *bytecodeStream, int &index) {
@@ -124,6 +125,22 @@ void CodeRunBase::funcINVOKEVIRTUAL(JavaThread *javaThread, BytecodeStream *byte
     InstanceKlass *klass = BootClassLoader::loadKlass(className);//获取类全限定名
     MethodInfo *m = JavaNativeInterface::getMethod(klass, methodName, descName);//根据方法名字和方法描述找到要调用的方法
     JavaNativeInterface::callVirtual(javaThread, m, paramCount, params);//调用方法
+}
+
+void CodeRunBase::funcINVOKESPECIAL(JavaThread *javaThread, BytecodeStream *bytecodeStream, int &index) {
+    printf("    **执行指令INVOKESPECIAL\n");
+    unsigned short opera = bytecodeStream->readByTwo(index);
+    string className = bytecodeStream->getBelongMethod()->getBelongKlass()->getConstantPool()->getClassNameByMethodInfo(opera);//获取类名
+    string methodName = bytecodeStream->getBelongMethod()->getBelongKlass()->getConstantPool()->getMethodNameByMethodInfo(opera);//获取方法名
+    string descName = bytecodeStream->getBelongMethod()->getBelongKlass()->getConstantPool()->getDescriptorNameByMethodInfo(opera);//获取方法描述
+    printf("\tclassName:%s,methodName:%s,descName:%s\n", className.c_str(), methodName.c_str(),
+           descName.c_str());
+    int paramCount =0 ;//初始化参数数量
+    char **params = CodeRunBase::getParams(descName, javaThread->stack.top(),paramCount);//解析参数
+    //todo 如果是本地方法则调用本地方法
+    InstanceKlass *klass = BootClassLoader::loadKlass(className);//获取类全限定名
+    MethodInfo *m = JavaNativeInterface::getMethod(klass, methodName, descName);//根据方法名字和方法描述找到要调用的方法
+    JavaNativeInterface::callSpecial(javaThread, m, paramCount, params);//调用方法
 }
 
 char** CodeRunBase::getParams(string descriptor, JavaVFrame *jf,int & paramCount) {

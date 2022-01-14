@@ -24,6 +24,7 @@ public:
     static void funcALOAD1(JavaThread *javaThread, BytecodeStream *bytecodeStream , int& index);
     static void funcNEW(JavaThread *javaThread, BytecodeStream *bytecodeStream , int& index);
     static void funcINVOKEVIRTUAL(JavaThread *javaThread, BytecodeStream *bytecodeStream , int& index);
+    static void funcINVOKESPECIAL(JavaThread *javaThread, BytecodeStream *bytecodeStream , int& index);
     static char **getParams(string descriptor, JavaVFrame *jf, int &paramCount);
 
 
