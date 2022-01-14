@@ -2523,7 +2523,7 @@ void CodeRunBase::funcINVOKESPECIAL(JavaThread *javaThread, BytecodeStream *byte
 
 **<p id="return">4.2.12 return指令的实现：</p>**
 
-**本次commit :** 
+**本次commit :** 36d311ad7358460969a67a1fba6a7e1e0b38e979
 
 编译器会给每一个Java方法生成一个return系列的指令，即使返回值为void，即使你并没有显式的将"return"写出，在方法结束时仍然会有return相关的指令，下面给出return相关的指令以及含义：
 
