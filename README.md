@@ -61,6 +61,9 @@
 ###### 4.2.10[invokespecial指令的实现](#invokespecial)
 ###### 4.2.11[本地方法的调用](#本地方法)
 ###### 4.2.12[return指令的实现](#return)
+##### 4.3[终于完成Hello JVM 的打印](#打印)
+###### 4.3.1[自定义JDK的准备](#JDK)
+###### 4.3.2[成功打印](#成功)
 #### 5.模版解释器 
 ### (三)内存池
 #### 1.Java进程总内存
@@ -2553,6 +2556,85 @@ void CodeRunBase::funcRETURN(JavaThread *javaThread, BytecodeStream *bytecodeStr
 ```
 
 >模版解释器才是JVM的精髓所在，所以在模版解释器我们一定会做保存调用者栈基地址这些操作。
+
+
+**<p id="打印">4.3 终于完成Hello JVM 的打印！：</p>**
+
+**<p id="JDK">4.3.1 自定义JDK的准备：</p>**
+
+**本次commit :** 
+
+由于Hotspot提供的jdk对于我们现阶段自己实现的这个简陋的JVM来说，过于复杂，我们暂时无法对其进行完全的类加载（例如接口、父类、异常等我们暂未实现）。所以我们不得不自己手写属于我们自己的JDK,
+别担心，都是Java代码，非常简单，就是定义几个Java类，定义几个方法而已。
+<br/><br/>
+我们自己实现JDk自然和Hotspot有所区别，为了避免对你产生误导，这里先说明以下Hotspot是如何实现：
+
+```java
+
+System.out.println("Hello JVM")；
+
+```
+首先System中有一个静态属性out:
+```java
+
+public final static PrintStream out = null;
+
+```
+out被初始化为了null，你会愤怒的发现你找不到它何时被赋值的。因为它是JVM在C++代码的帮助下调用System.initializeSystemClass实现初始化的。
+<br/><br/>
+* 为了"简陋"，我们自定义JDK将不选择这么做，我们直接new就ok
+* 显然我们需要定义一个System类（java.lang.System），里面有一个静态属性out，类型为PrintStream
+* 显然我们还需要定义一个PrintStream（java.io.PrintStream）类用来声明out
+* 显然PrintStream类里面应该有一个方法println用来供我们调用，它将实现打印的功能
+
+于是我们的包结构变成了这个样子：
+
+<img src="https://github.com/ArosyW/picture/blob/master/pack.jpeg" width = "250" height = "300" />
+
+（有报红没关系，是编译器识别到的不是我们自定义的JDK引起的）
+
+其中：
+```java
+
+public class System {
+    public final static PrintStream out = new PrintStream();
+}
+
+```
+
+```java
+
+public class PrintStream {
+    public void println(String x) {
+        write0(x);
+    }
+    private native void write0(String x);
+}
+
+```
+我们最终通过本地方法write0调用到我们的JVM上的C++代码来实现打印，自定义JDK我已经上传至github了，另外，如果你因为System类中报红而无法编译，你只需要将你的out文件删除重新运行即可。
+
+
+**<p id="成功">4.3.2 成功打印：</p>**
+
+**本次commit :**
+
+* 作为打印"Hello JVM"的第一阶段的最后一节，这一小节主要修修补补前面的漏洞（写的多了，难免有不合适的地方，见谅），首先要实现native方法"write0"，我们才能成功打印：
+```c++
+
+void CodeRunNative::writeBytes(int paramsCount, char **params) {
+    CommonValue *cv = (CommonValue*)*params; //目前只有一个参数 ，就直接取了
+    printf("执行本地方法write0,以下为输出结果：\n");
+    printf("%s\n",cv->val); //打印参数的值
+};
+
+```
+* 新建了Threads.cpp用来记录当前java线程，以方便随时可以取到。
+
+* BootClassLoader::loadKlass中修复了以下字符串append相关的问题，不细阐述了。
+
+* CodeRunBase::getParams中修复了从栈帧顶部取参数的bug。
+
 
 
 
