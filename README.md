@@ -17,7 +17,7 @@
 
 * 本系列中的"模版解释器"部分受《揭秘Java虚拟机》 作者：封亚飞 的启发、影响是巨大的，特意说明，以示尊敬
 
-* 本系列将永久免费
+* 如果图片加载失败，你可是技术人员！自己想想办法。（去https://www.ipaddress.com查raw.githubusercontent.com的ip，然后绑host就完事）
 
 ---
 
