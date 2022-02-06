@@ -3,6 +3,8 @@
 //
 #include "map"
 #include "../oop/InstanceKlass.h"
+#include "../runtime/JavaThread.h"
+#include "../runtime/Threads.h"
 
 #ifndef JVM_BOOTCLASSLOADER_H
 #define JVM_BOOTCLASSLOADER_H

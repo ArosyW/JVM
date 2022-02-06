@@ -6,10 +6,14 @@
 /**
  * 初始化本地方法
  */
+map<string, CODENATIVE> CodeRunNative::map;
+
 void CodeRunNative::initCodeRun() {
-    map["writeBytes"] = writeBytes;
+    map["write0"] = writeBytes;
 }
 
 void CodeRunNative::writeBytes(int paramsCount, char **params) {
-    //todo 本地方法的实现
+    CommonValue *cv = (CommonValue*)*params; //目前只有一个参数 ，就直接取了
+    printf("执行本地方法write0,以下为输出结果：\n");
+    printf("%s\n",cv->val); //打印参数的值
 };

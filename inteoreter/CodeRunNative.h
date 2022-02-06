@@ -21,7 +21,7 @@ public:
  * @param paramsCount
  * @param params
  */
-    static void writeBytes(int paramsCount, char **params);
+    static void writeBytes(int paramsCount, char **params);//打印
 };
 
 

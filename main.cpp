@@ -5,6 +5,7 @@
 #include "native/JavaNativeInterface.h"
 #include "inteoreter/CodeRunBase.h"
 #include "inteoreter/CodeRunNative.h"
+#include "runtime/Threads.h"
 
 
 using namespace std;
@@ -13,10 +14,11 @@ void startVM();
 
 int main() {
     startVM();
-    string name = "HelloJVM";
+    string name = "jvm/HelloJVM";
+    JavaThread *javaThread = new JavaThread;//模拟线程的创建
+    Threads::curThread = javaThread;
     InstanceKlass *klass = BootClassLoader::loadKlass(name);//加载HelloJVM类
     MethodInfo *m = JavaNativeInterface::getMethod(klass, "main", "([Ljava/lang/String;)V");//遍历klass所有的方法，找到main方法
-    JavaThread *javaThread = new JavaThread;//模拟线程的创建
     JavaNativeInterface::callStaticMethod(javaThread,m);//执行main方法
     return 0;
 }

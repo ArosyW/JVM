@@ -18,6 +18,7 @@ CODERUN CodeRunBase::run[256];
 
 void CodeRunBase::initCodeRun() {
     run[NOP] = funcNOP; // NOP枚举值为0
+    run[DUP] = funcDUP;
     run[RETURN] = funcRETURN;
     run[GETSTATIC] = funcGETSTATIC;
     run[ICONST_0] = funcICONST0;
@@ -39,7 +40,6 @@ void CodeRunBase::funcRETURN(JavaThread *javaThread, BytecodeStream *bytecodeStr
 //nothing to do .
     printf("    **执行指令RETURN\n");
 }
-
 void CodeRunBase::funcGETSTATIC(JavaThread *javaThread, BytecodeStream *bytecodeStream, int &index) {
     printf("    *执行指令GETSTATIC\n");
     unsigned short opera = bytecodeStream->readByTwo(index); //取出操作数
@@ -148,7 +148,7 @@ void CodeRunBase::funcINVOKESPECIAL(JavaThread *javaThread, BytecodeStream *byte
     char **params = CodeRunBase::getParams(descName, javaThread->stack.top(),paramCount);//解析参数
     InstanceKlass *klass = BootClassLoader::loadKlass(className);//获取类全限定名
     MethodInfo *m = JavaNativeInterface::getMethod(klass, methodName, descName);//根据方法名字和方法描述找到要调用的方法
-    if (m->getAccessFlags() & 100000000 == 0x0100) {//判断是否是本地方法
+    if ((m->getAccessFlags() & 100000000) == 0x0100) {//判断是否是本地方法
         FUNNATIVE nativeFunc = (FUNNATIVE) CodeRunNative::map[m->getMethodName()]; //取出本地方法
         nativeFunc(paramCount,params);//调用本地方法
         return;
