@@ -2589,7 +2589,7 @@ out被初始化为了null，你会愤怒的发现你找不到它何时被赋值�
 
 于是我们的包结构变成了这个样子：
 
-<img src="https://github.com/ArosyW/picture/blob/master/pack.jpeg" width = "250" height = "300" />
+<img src="https://github.com/ArosyW/picture/blob/master/pack.jpeg" width = "320" height = "250" />
 
 （有报红没关系，是编译器识别到的不是我们自定义的JDK引起的）
 
