@@ -2562,7 +2562,7 @@ void CodeRunBase::funcRETURN(JavaThread *javaThread, BytecodeStream *bytecodeStr
 
 **<p id="JDK">4.3.1 自定义JDK的准备：</p>**
 
-**本次commit :** 
+**本次commit :** https://github.com/ArosyW/OurJDK
 
 由于Hotspot提供的jdk对于我们现阶段自己实现的这个简陋的JVM来说，过于复杂，我们暂时无法对其进行完全的类加载（例如接口、父类、异常等我们暂未实现）。所以我们不得不自己手写属于我们自己的JDK,
 别担心，都是Java代码，非常简单，就是定义几个Java类，定义几个方法而已。
@@ -2617,7 +2617,7 @@ public class PrintStream {
 
 **<p id="成功">4.3.2 成功打印：</p>**
 
-**本次commit :**
+**本次commit :** 764c52f125f59e0f8532d43768f39809e3eb0c53
 
 * 作为打印"Hello JVM"的第一阶段的最后一节，这一小节主要修修补补前面的漏洞（写的多了，难免有不合适的地方，见谅），首先要实现native方法"write0"，我们才能成功打印：
 ```c++
@@ -2633,10 +2633,24 @@ void CodeRunNative::writeBytes(int paramsCount, char **params) {
 
 * BootClassLoader::loadKlass中修复了以下字符串append相关的问题，不细阐述了。
 
-* CodeRunBase::getParams中修复了从栈帧顶部取参数的bug。
+记得把BootClassLoader.cpp中的路径更换为你编译好的项目路径。
 
+输出结果：
 
+```
 
+…………
+
+执行本地方法write0,以下为输出结果：
+HelloJVM
+指令字节：B1
+    **执行指令RETURN
+===============执行方法结束 :println =================
+指令字节：B1
+    **执行指令RETURN
+===============执行方法结束 :main =================
+
+```
 
 ### (六)扩展内容
 
