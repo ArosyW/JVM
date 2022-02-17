@@ -6,20 +6,48 @@
 #include "inteoreter/CodeRunBase.h"
 #include "inteoreter/CodeRunNative.h"
 #include "runtime/Threads.h"
+#include "runtime/StubRoutines.h"
 
 
 using namespace std;
 
 void startVM();
-
+typedef void (*CallStub)(unsigned long link,
+                         int* result,
+                         int resultType,
+                         MethodInfo* method,
+                         unsigned long entryPoint,
+                         int* parameters,
+                         int parametersCount,
+                         JavaThread* javaThread
+);
+int *a = (int *) 7;
+MethodInfo *method = (MethodInfo *) 9;
+int *parameters = (int *) 11;
+JavaThread *javaThread = (JavaThread*)13;
 int main() {
-    startVM();
-    string name = "jvm/HelloJVM";
-    JavaThread *javaThread = new JavaThread;//模拟线程的创建
-    Threads::curThread = javaThread;
-    InstanceKlass *klass = BootClassLoader::loadKlass(name);//加载HelloJVM类
-    MethodInfo *m = JavaNativeInterface::getMethod(klass, "main", "([Ljava/lang/String;)V");//遍历klass所有的方法，找到main方法
-    JavaNativeInterface::callStaticMethod(javaThread,m);//执行main方法
+    Asm::init();
+    StubRoutines::GenerateInitial();
+
+    StubRoutines::CallStub()(
+            6,
+            a,
+            8,
+            method,
+            10,
+            parameters,
+            12,
+            javaThread
+    );
+    int t = 1;
+    t = t * 8;
+//    startVM();
+//    string name = "jvm/HelloJVM";
+//    JavaThread *javaThread = new JavaThread;//模拟线程的创建
+//    Threads::curThread = javaThread;
+//    InstanceKlass *klass = BootClassLoader::loadKlass(name);//加载HelloJVM类
+//    MethodInfo *m = JavaNativeInterface::getMethod(klass, "main", "([Ljava/lang/String;)V");//遍历klass所有的方法，找到main方法
+//    JavaNativeInterface::callStaticMethod(javaThread,m);//执行main方法
     return 0;
 }
 void startVM(){
