@@ -2696,6 +2696,29 @@ HelloJVM
 岂不是，就可以实现“自定义机器指令的调用”！
 <br/><br/>
 这种天才的想法正是Hotspot所采用的。
+<br/><br/>
+必须举一个严肃的栗子🌰：
+
+```c++
+
+typedef int (*Incr)(int arg);//类型：函数指针
+int main() {
+    int code[] = {0x55,0x48,0x89,0xe5,0x89,0x7d,0xfc,0x8b,0x45,0xfc,0x83,0xc0,0x01,0x89,0x45,0xfc,0x5d,0xc3};//机器指令 功能：将参数+1后返回
+    unsigned char * memory = static_cast<unsigned char *>(mmap(NULL,getpagesize(),PROT_READ | PROT_WRITE | PROT_EXEC,MAP_ANON | MAP_SHARED,0,0));//申请一块连续的内存空间
+    for (int i = 0; i < 18; i++) {//将机器指令写入申请的内存空间
+        *(memory + i) = code[i];
+    }
+    Incr incr = (Incr) memory;//声明函数指针 并将其指向写好了机器指令的内存空间
+    int res = incr(1); //调用这个方法 实现 +1
+    printf("%d\n", res);//输出 结果：2
+    return 0;
+}
+
+```
+输出：
+2
+
+这就是一个完整的用c++调用机器指令的例子！
 
 
 
