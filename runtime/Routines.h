@@ -17,11 +17,14 @@ typedef void (*CallStub)(unsigned long link,
         int parametersCount,
         JavaThread* javaThread
         );
-class StubRoutines {
+class Routines {
 public:
     static unsigned long callStubEntry;
     static ::CallStub CallStub();
     static void GenerateInitial();
+    static void InitCallStub();
+    static void InitEntryPoint();
+
 
 };
 

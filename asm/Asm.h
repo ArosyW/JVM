@@ -15,6 +15,11 @@ public:
     static void movRcxByRsp(int offset);
     static void shlRcx(int bit);
     static void subRspByRcx();
+    static void pushOrPop(int registers);
+    static void dec(int registers);
+    static void CallStub();
+
+
 
 
 
