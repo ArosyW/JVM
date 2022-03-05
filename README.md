@@ -2899,6 +2899,42 @@ entry_point像CallStub一样也是在JVM启动时动态生成的一段机器指�
 
 **<p id="entry_point">5.3方法执行环境的准备entry_point：</p>**
 
+前文说到由c++代码进入机器指令的入口:CallStub，在CallStub中会调用entry_point，同CallStub，entry_point也是通过在JVM启动时向内存中写入机器指令来实现功能的方法，或者说是一段由我们自己设计的
+机器指令。
+
+entry_point所实现的主要功能是创建局部变量表、创建栈帧、执行JVM指令。
+
+* 创建局部变量表:
+局部变量表，除了在方法内声明的变量之外，方法的入参本身就属于局部变量，而方法的入参已经在entry_point的调用者的栈中了，也就是在CallStub的栈中。那么只需要为非入参的局部变量分配栈空间即可，而且局部变量表的大小我们已经
+在   [解析“方法”](#方法) 存起来了，通过CallStub的入参MethodInfo* method即可取到，然后通过多次的 push 0x0 指令实现局部变量表的创建。
+
+> 聪明的你或许会有疑问，为什么不用sub指令直接扩栈呢？
+> 因为对于Java方法的执行来说，除了要有可用的内存空间外，还需要保证这块内存空间中不会有脏数据。而在我们自己设计机器指令的时候，不停的扩栈、缩栈，难免有脏数据，在使用之前、在让这块内存作为Java的局部变量表之前，需要我们手动清理。
+> 那就不如直接使用push 0x0来实现栈分配了，要知道push指令会将rsp寄存器的指向向下扩展8个字节，在分配的同时，将内存清理了。
+
+但在真正的分配栈内存之前，让我们先来看一下此时的堆栈图：
+<br/><br/>
+<img src="https://github.com/ArosyW/picture/blob/master/entry_point_pre.png" width = "450" height = "300" />
+
+由于CallStub在调用entry_point时使用的是call指令，这条指令会将CallStub下一条指令入栈，因此entry_point的栈于java入参之间被隔断了，前面我们说过entry_point想要复用CallStub的java入参而不想再复制一份，假如此时entry_point
+之间扩栈，就会让局部变量表被"CallStub下一条指令"分割成两段，这样实在是太没有艺术气息了！
+
+所以我们在真正的创建局部变量表之前，先执行 pop eax ,也就是先将"CallStub下一条指令"放入eax寄存器中存起来，在 push 0x0 进行扩栈：
+
+<img src="https://github.com/ArosyW/picture/blob/master/entry_pointjubu.png" width = "450" height = "300" />
+
+* 创建Java栈帧：
+
+栈帧大小：创建Java栈帧无非就是用机器指令分配一块栈空间，但分配多大的，在Java方法执行过程中会不断地向栈帧中放入、弹出变量，似乎我们需要一个最大值，也就是这个方法的栈帧所能容纳的最大的变量的数量，而这个值编译器已经帮我们做好了，
+而且在   [解析“方法”](#方法) 中给我们也已经把它存起来了，就在MethodInfo中的maxStack属性里。
+
+在这之前我们需要先恢复"CallStub下一条指令"，将它从eax寄存器中入栈。然后再创建栈帧。
+
+* 执行JVM指令：
+
+在JVM启动时也会为200多条JVM指令一一生成一段机器指令，这些指令的数量是要远远小于"字节码解释器"，也就是用c++进行JVM指令解释所编译后的机器指令的数量的。在entry_point创建完局部变量和栈帧之后（当然还有很多其他细节），就可以直接调用这些机器指令了。
+
+
 
 ### (六)扩展内容
 
