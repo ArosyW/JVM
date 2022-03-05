@@ -2856,7 +2856,9 @@ so easy!
 
 关于[rbp+0x10]的解释：这个地方的值就是parameters_count，至于为什么，在 [cpu是如何执行指令的](#cpu是如何执行指令的)  [cpu是如何执行方法的](#cpu是如何执行方法的) 中我们已经知道，如果某个方法的入参
 大于6个，那么前6个的参数将会通过寄存器edi、rsi、edx、rcx、r8d、r9依次进行传递，大于6的参数将会放入调用者的栈空间当中，很显然，当调用进CallStub时，这8个参数的位置如图所示：
-《此处缺少一张图》
+
+<img src="https://github.com/ArosyW/picture/blob/master/Callstub.png" width = "450" height = "300" />
+
 
 * 将Java方法入参保存在栈中：
 <br/><br/>
@@ -2879,7 +2881,8 @@ so easy!
     //循环入数end
 ```
 执行完这一段汇编代码之后的栈如图：
-《此处缺少一张图》
+
+<img src="https://github.com/ArosyW/picture/blob/master/putArg.png" width = "450" height = "300" />
 
 * 调用调用entry_point：
 entry_point像CallStub一样也是在JVM启动时动态生成的一段机器指令，在方法调用时传进来它的内存首地址，用call指令就可以直接调用。
